@@ -6,6 +6,9 @@ A powerful framework for building intelligent agent teams with:
 - Role-based agent collaboration (PM, Architect, Developer, QA, TechWriter)
 - Real-time progress tracking
 - Message-based communication between agents
+- Task dependency graph engine
+- Connection pool management
+- State persistence
 """
 
 __version__ = "0.1.0"
@@ -15,8 +18,12 @@ from .executor import get_executor, Task, TaskStatus, TaskExecutor
 from .scheduler import get_dispatcher, TaskScheduler
 from .communication import get_communication, Message, MessageType
 from .agents import AgentTeam, load_teams
+from .dependency_graph import DependencyGraph, get_dependency_graph
+from .connection_pool import ConnectionPool, PoolManager, get_pool_manager, create_pool
+from .persistence import StateManager, JSONFileBackend, SQLiteBackend, get_state_manager
 
 __all__ = [
+    # Core
     "get_executor",
     "Task",
     "TaskStatus", 
@@ -28,4 +35,17 @@ __all__ = [
     "MessageType",
     "AgentTeam",
     "load_teams",
+    # Dependency Graph
+    "DependencyGraph",
+    "get_dependency_graph",
+    # Connection Pool
+    "ConnectionPool",
+    "PoolManager",
+    "get_pool_manager",
+    "create_pool",
+    # Persistence
+    "StateManager",
+    "JSONFileBackend",
+    "SQLiteBackend",
+    "get_state_manager",
 ]
