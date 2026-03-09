@@ -5,14 +5,14 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "AgentCrew"
 version = "0.1.0"
-description = "Multi-Agent Collaboration Framework with Task Decomposition and Parallel Execution"
+description = "🤖 Multi-Agent Collaboration Framework with AI-powered task decomposition, parallel execution, and intelligent team coordination"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [
-    {name = "stlin256's OpenClaw", email = "yjzlxljy@outlook.com"}
+    {name = "stlin256", email = "yjzlxljy@outlook.com"}
 ]
-keywords = ["ai", "agent", "multi-agent", "collaboration", "task-execution"]
+keywords = ["ai", "agent", "multi-agent", "collaboration", "task-execution", "gpt", "llm", "openai", "autonomous-agents", "agent-framework", "crewai-alternative", "task-automation", "team-collaboration"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -22,6 +22,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Software Development :: Libraries :: Application Frameworks",
+    "Topic :: Artificial Intelligence :: Agents",
+    "Intended Audience :: Information Technology",
 ]
 
 dependencies = [
