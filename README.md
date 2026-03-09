@@ -1,95 +1,151 @@
-# OpenAgent
+<!-- markdownlint-disable MD041 -->
+<div align="center">
 
-基于 Agent Team 集群的智能代理框架，支持多代理协作编程。
+<!-- logo -->
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://img.shields.io/badge/-OpenAgent-007ACC?style=for-the-badge&labelColor=1e1e2e&color=89b4fa">
+  <source media="(prefers-color-scheme: light)" srcset="https://img.shields.io/badge/-OpenAgent-007ACC?style=for-the-badge&labelColor=f5f5f5&color=007ACC">
+  <img alt="OpenAgent" src="https://img.shields.io/badge/-OpenAgent-007ACC?style=for-the-badge">
+</picture>
 
-## 项目目标
+<!-- badges -->
+<p>
 
-- 实现多代理协作编程框架
-- 支持任务分解、并行执行、结果汇总
-- 与 OpenClaw 系统深度集成
+[![License](https://img.shields.io/github/license/none-ai/openagent?style=flat&color=green)](LICENSE)
+[![Python Version](https://img.shields.io/badge/python-3.10+-blue?style=flat&color=007ACC)](https://www.python.org/)
+[![Status](https://img.shields.io/badge/status-developing-yellow?style=flat&color=yellow)](https://github.com/none-ai/openagent)
+[![PyPI Version](https://img.shields.io/pypi/v/openagent?style=flat&color=blue)](https://pypi.org/project/openagent/)
+[![Last Commit](https://img.shields.io/github/last-commit/none-ai/openagent/main?style=flat&color=orange)](https://github.com/none-ai/openagent/commits)
 
-## 核心特性
+</p>
 
-- 🤖 **多代理协作**：支持 ProjectManager、Architect、Developer、QA、TechWriter 等角色
-- 📋 **任务管理**：支持任务分解、进度跟踪、结果汇总
-- 🔄 **并行执行**：支持多代理并行处理任务
-- 📊 **状态追踪**：与看板系统深度集成
-- 💬 **消息通信**：支持代理间消息传递和事件通知
+<!-- tagline -->
+<h3>🤖 Multi-Agent Collaboration Framework</h3>
+<p>Intelligent agent team framework with task decomposition, parallel execution, and result aggregation</p>
 
-## 架构
+<!-- quick links -->
+<p>
 
+[📖 Documentation](#quick-start) ·
+[🏗️ Architecture](#architecture) ·
+[👥 Team Roles](#team-roles) ·
+[🚀 Contributing](#contributing)
+
+</p>
+
+</div>
+
+---
+
+## ✨ Features
+
+| Feature | Description |
+|---------|-------------|
+
+| 🤖 **Multi-Agent Collaboration** | Supports professional roles: ProjectManager, Architect, Developer, QA, TechWriter |
+| 📋 **Task Management** | Intelligent task decomposition, real-time progress tracking, automatic result aggregation |
+| 🔄 **Parallel Execution** | Multi-agent parallel processing for maximum concurrency efficiency |
+| 📊 **State Tracking** | Deep integration with Kanban system for real-time task status monitoring |
+| 💬 **Message Communication** | Inter-agent messaging, event notifications, pub/sub pattern |
+
+## 📦 Installation
+
+```bash
+# Install via pip
+pip install openagent
+
+# Or install from source
+git clone https://github.com/none-ai/openagent.git
+cd openagent
+pip install -e .
 ```
-OpenAgent/
-├── agents/              # 代理定义和团队管理
-│   └── __init__.py      # Agent、AgentTeam 类
-├── tasks/              # 任务定义
-├── config/             # 配置文件
-├── executor.py         # 任务执行引擎
-├── scheduler.py        # 任务调度器
-├── communication.py    # 消息通信模块
-└── data/              # 数据存储
-```
 
-### 核心模块
-
-| 模块 | 功能 |
-|------|------|
-| `agents/` | 代理角色定义、团队管理 |
-| `executor.py` | 任务分解、执行、结果汇总 |
-| `scheduler.py` | 任务调度、负载均衡、并行执行 |
-| `communication.py` | 消息总线、订阅发布、代理通信 |
-
-## 快速开始
+## 🚀 Quick Start
 
 ```python
-from agents import AgentTeam, load_teams
-from executor import get_executor, Task
-from scheduler import get_dispatcher
-from communication import get_communication
+from openagent import load_teams, get_executor, get_communication, MessageType
 
-# 1. 加载团队
+# 1. Load agent teams
 teams = load_teams()
 team = teams.get("openagent_dev")
 
-# 2. 创建任务
+# 2. Create a task
 executor = get_executor()
 task = executor.create_task(
-    title="开发用户认证模块",
-    description="实现登录、注册、权限验证功能",
+    title="Develop User Auth Module",
+    description="Implement login, registration, and permission validation",
     task_type="development"
 )
 
-# 3. 分配任务
+# 3. Assign task
 executor.assign_task(task.id, "Developer-A")
 
-# 4. 执行任务
+# 4. Execute task
 result = executor.execute_task(task.id)
 
-# 5. 发送通知
+# 5. Send notification
 comm = get_communication()
 comm.send_message(
     sender="System",
     receiver="PM-001",
-    content=f"任务 {task.title} 已完成",
+    content=f"Task {task.title} completed",
     msg_type=MessageType.NOTIFICATION
 )
 ```
 
-## 团队角色
+## 🏗️ Architecture
 
-| 角色 | 代号 | 职责 |
-|------|------|------|
-| 项目经理 | pm | 任务分解、进度跟踪、结果汇总 |
-| 架构师 | architect | 系统设计、技术选型、代码审查 |
-| 开发者 | developer | 代码实现、功能开发 |
-| 测试工程师 | qa | 测试用例、缺陷发现 |
-| 文档工程师 | techwriter | 文档编写 |
+```
+openagent/
+├── agents/              # Agent definitions and team management
+│   └── __init__.py      # Agent, AgentTeam classes
+├── tasks/               # Task definitions
+├── config/              # Configuration files
+├── executor.py          # Task execution engine
+├── scheduler.py         # Task scheduler
+├── communication.py    # Message communication module
+└── data/               # Data storage
+```
 
-## 状态
+### Core Modules
 
-🛠 开发中
+| Module | Function |
+|--------|----------|
+| `agents/` | Agent role definitions, team management |
+| `executor.py` | Task decomposition, execution, result aggregation |
+| `scheduler.py` | Task scheduling, load balancing, parallel execution |
+| `communication.py` | Message bus, pub/sub, agent communication |
+
+## 👥 Team Roles
+
+| Role | Code | Responsibility |
+|------|------|----------------|
+| 🧑‍💼 Project Manager | pm | Task decomposition, progress tracking, result aggregation |
+| 🏗️ Architect | architect | System design, technology selection, code review |
+| 💻 Developer | developer | Code implementation, feature development |
+| 🧪 QA Engineer | qa | Test case creation, defect discovery |
+| 📝 Tech Writer | techwriter | Documentation writing |
+
+## 🤝 Contributing
+
+Welcome to submit Pull Requests! Please read the [Contributing Guide](CONTRIBUTING.md) first.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-**创建日期**: 2026-03-09
-**最后更新**: 2026-03-09
+<div align="center">
+
+**Created**: 2026-03-09 · **Last Updated**: 2026-03-09
+
+⭐ Star us · 🍴 Fork us · 🐛 Report Issues
+
+</div>
