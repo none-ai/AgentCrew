@@ -1,0 +1,16 @@
+{
+  "TEST-001": {
+    "id": "TEST-001",
+    "title": "\u6d4b\u8bd5\u4efb\u52a1",
+    "description": "\u8fd9\u662f\u4e00\u4e2a\u6d4b\u8bd5",
+    "assignee": null,
+    "priority": 3,
+    "status": "pending",
+    "result": null,
+    "created_at": "2026-03-09T12:12:33.182600",
+    "started_at": null,
+    "completed_at": null,
+    "dependencies": [],
+    "subtasks": []
+  }
+}
