@@ -47,8 +47,8 @@ Please be respectful and constructive. We welcome contributions from everyone.
 
 ```bash
 # Clone the repository
-git clone https://github.com/none-ai/openagent.git
-cd openagent
+git clone https://github.com/none-ai/AgentCrew.git
+cd AgentCrew
 
 # Install in development mode
 pip install -e .

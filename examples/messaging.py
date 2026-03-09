@@ -8,7 +8,7 @@ Demonstrates inter-agent communication:
 4. Query message history
 """
 
-from openagent import get_communication, MessageType, load_teams
+from AgentCrew import get_communication, MessageType, load_teams
 
 
 def notification_handler(message):
@@ -26,7 +26,7 @@ def main():
     
     # Load teams to get agent names
     teams = load_teams()
-    team = teams.get("openagent_dev")
+    team = teams.get("AgentCrew_dev")
     agents = team.get_all_agents()
     
     # Subscribe to notifications

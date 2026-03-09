@@ -7,7 +7,7 @@ This example demonstrates the fundamental operations of OpenAgent:
 3. Listing available agents
 """
 
-from openagent import load_teams
+from AgentCrew import load_teams
 
 
 def main():

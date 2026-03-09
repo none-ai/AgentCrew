@@ -7,7 +7,7 @@ This directory contains various examples demonstrating OpenAgent's capabilities.
 Make sure OpenAgent is installed:
 
 ```bash
-pip install openagent
+pip install AgentCrew
 ```
 
 Then run any example:

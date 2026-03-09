@@ -8,7 +8,7 @@ Demonstrates:
 4. Saving team configurations
 """
 
-from openagent.agents import Agent, AgentTeam, AGENT_ROLES, load_teams, save_teams
+from AgentCrew.agents import Agent, AgentTeam, AGENT_ROLES, load_teams, save_teams
 
 
 def main():

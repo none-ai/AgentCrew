@@ -173,7 +173,7 @@ def main():
     parser_list.set_defaults(func=cmd_list_teams)
     
     parser_status = subparsers.add_parser("status", help="查看团队状态")
-    parser_status.add_argument("--team", default="openagent_dev", help="团队ID")
+    parser_status.add_argument("--team", default="AgentCrew_dev", help="团队ID")
     parser_status.set_defaults(func=cmd_team_status)
     
     # 任务命令

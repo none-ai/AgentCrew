@@ -2,7 +2,7 @@
 Tests for OpenAgent package
 """
 import pytest
-from openagent import (
+from AgentCrew import (
     load_teams,
     get_executor,
     get_communication,
@@ -12,7 +12,7 @@ from openagent import (
     MessageType,
     AgentTeam,
 )
-from openagent.agents import Agent, AGENT_ROLES
+from AgentCrew.agents import Agent, AGENT_ROLES
 
 
 class TestAgents:
@@ -86,7 +86,7 @@ class TestLoadTeams:
         teams = load_teams()
         assert isinstance(teams, dict)
         assert len(teams) > 0
-        assert "openagent_dev" in teams
+        assert "AgentCrew_dev" in teams
 
 
 class TestTask:

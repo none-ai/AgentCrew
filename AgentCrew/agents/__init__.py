@@ -42,7 +42,7 @@ AGENT_ROLES = {
 
 # 默认团队配置
 DEFAULT_TEAMS = {
-    "openagent_dev": {
+    "AgentCrew_dev": {
         "name": "OpenAgent 开发团队",
         "members": [
             {"role": "pm", "name": "PM-001", "active": True},

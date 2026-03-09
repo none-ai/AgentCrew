@@ -11,11 +11,11 @@
 <!-- badges -->
 <p>
 
-[![License](https://img.shields.io/github/license/none-ai/openagent?style=flat&color=green)](LICENSE)
+[![License](https://img.shields.io/github/license/none-ai/AgentCrew?style=flat&color=green)](LICENSE)
 [![Python Version](https://img.shields.io/badge/python-3.10+-blue?style=flat&color=007ACC)](https://www.python.org/)
-[![Status](https://img.shields.io/badge/status-developing-yellow?style=flat&color=yellow)](https://github.com/none-ai/openagent)
-[![PyPI Version](https://img.shields.io/pypi/v/openagent?style=flat&color=blue)](https://pypi.org/project/openagent/)
-[![Last Commit](https://img.shields.io/github/last-commit/none-ai/openagent/main?style=flat&color=orange)](https://github.com/none-ai/openagent/commits)
+[![Status](https://img.shields.io/badge/status-developing-yellow?style=flat&color=yellow)](https://github.com/none-ai/AgentCrew)
+[![PyPI Version](https://img.shields.io/pypi/v/AgentCrew?style=flat&color=blue)](https://pypi.org/project/AgentCrew/)
+[![Last Commit](https://img.shields.io/github/last-commit/none-ai/AgentCrew/main?style=flat&color=orange)](https://github.com/none-ai/AgentCrew/commits)
 
 </p>
 
@@ -52,22 +52,22 @@
 
 ```bash
 # Install via pip
-pip install openagent
+pip install AgentCrew
 
 # Or install from source
-git clone https://github.com/none-ai/openagent.git
-cd openagent
+git clone https://github.com/none-ai/AgentCrew.git
+cd AgentCrew
 pip install -e .
 ```
 
 ## 🚀 Quick Start
 
 ```python
-from openagent import load_teams, get_executor, get_communication, MessageType
+from AgentCrew import load_teams, get_executor, get_communication, MessageType
 
 # 1. Load agent teams
 teams = load_teams()
-team = teams.get("openagent_dev")
+team = teams.get("AgentCrew_dev")
 
 # 2. Create a task
 executor = get_executor()
@@ -96,7 +96,7 @@ comm.send_message(
 ## 🏗️ Architecture
 
 ```
-openagent/
+AgentCrew/
 ├── agents/              # Agent definitions and team management
 │   └── __init__.py      # Agent, AgentTeam classes
 ├── tasks/               # Task definitions

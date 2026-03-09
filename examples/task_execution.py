@@ -8,7 +8,7 @@ Demonstrates how to:
 4. Track task status
 """
 
-from openagent import load_teams, get_executor
+from AgentCrew import load_teams, get_executor
 
 
 def main():
@@ -18,7 +18,7 @@ def main():
     
     # Load teams
     teams = load_teams()
-    team = teams.get("openagent_dev")
+    team = teams.get("AgentCrew_dev")
     
     # Get executor
     executor = get_executor()

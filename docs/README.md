@@ -21,14 +21,14 @@
 ### From PyPI
 
 ```bash
-pip install openagent
+pip install AgentCrew
 ```
 
 ### From Source
 
 ```bash
-git clone https://github.com/none-ai/openagent.git
-cd openagent
+git clone https://github.com/none-ai/AgentCrew.git
+cd AgentCrew
 pip install -e .
 ```
 
@@ -39,17 +39,17 @@ pip install -e .
 ### 1. Load Agent Teams
 
 ```python
-from openagent import load_teams
+from AgentCrew import load_teams
 
 teams = load_teams()
-team = teams.get("openagent_dev")
+team = teams.get("AgentCrew_dev")
 print(team.get_status())
 ```
 
 ### 2. Create and Execute Tasks
 
 ```python
-from openagent import get_executor
+from AgentCrew import get_executor
 
 executor = get_executor()
 task = executor.create_task(
@@ -68,7 +68,7 @@ result = executor.execute_task(task.id)
 ### 3. Send Messages
 
 ```python
-from openagent import get_communication, MessageType
+from AgentCrew import get_communication, MessageType
 
 comm = get_communication()
 comm.send_message(
