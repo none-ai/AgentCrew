@@ -1,0 +1,44 @@
+{
+  "interval_seconds": 1800,
+  "auto_execute": true,
+  "min_priority": 3,
+  "enabled": true,
+  "patrol_targets": [
+    "/home/stlin-claw/.openclaw/workspace-taizi/scripts",
+    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew",
+    "/home/stlin-claw/.openclaw/workspace-taizi/data"
+  ],
+  "notification": false,
+  "rules": [
+    {
+      "name": "代码质量问题",
+      "priority": 3,
+      "action": "fix_code_issues"
+    },
+    {
+      "name": "任务积压",
+      "priority": 4,
+      "action": "escalate_tasks"
+    },
+    {
+      "name": "任务长期未处理",
+      "priority": 5,
+      "action": "handle_stale_tasks"
+    },
+    {
+      "name": "磁盘空间不足",
+      "priority": 5,
+      "action": "cleanup_disk"
+    },
+    {
+      "name": "进程异常",
+      "priority": 5,
+      "action": "restart_service"
+    },
+    {
+      "name": "待审核任务",
+      "priority": 3,
+      "action": "notify_review"
+    }
+  ]
+}
