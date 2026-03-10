@@ -7,9 +7,9 @@
   <img alt="AgentCrew" src="https://img.shields.io/badge/🤖-AgentCrew-6366f1?style=for-the-badge">
 </picture>
 
-# 🤖 AgentCrew | 企业级多智能体协作框架
+# 🤖 AgentCrew | Enterprise Multi-Agent Collaboration Framework
 
-⚡ **智能任务分解** · 🔄 **并行执行** · 📊 **实时状态追踪** · 💬 **消息通信**
+⚡ **Intelligent Task Decomposition** · 🔄 **Parallel Execution** · 📊 **Real-time Status Tracking** · 💬 **Message Communication**
 
 [![GitHub stars](https://img.shields.io/github/stars/none-ai/AgentCrew?style=for-the-badge&color=fbbf24&labelColor=292524)](https://github.com/none-ai/AgentCrew/stargazers)
 [![GitHub forks](https://img.shields.io/github/forks/none-ai/AgentCrew?style=for-the-badge&color=60a5fa&labelColor=292524)
@@ -27,57 +27,57 @@
 
 ---
 
-[📖 文档](https://github.com/none-ai/AgentCrew#-quick-start) ·
-[🏗️ 架构](https://github.com/none-ai/AgentCrew#-architecture) ·
-[👥 团队角色](https://github.com/none-ai/AgentCrew#-team-roles) ·
-[🚀 贡献](https://github.com/none-ai/AgentCrew#-contributing) ·
-[💬 讨论](https://github.com/none-ai/AgentCrew/discussions)
+[📖 Documentation](https://github.com/none-ai/AgentCrew#-quick-start) ·
+[🏗️ Architecture](https://github.com/none-ai/AgentCrew#-architecture) ·
+[👥 Team Roles](https://github.com/none-ai/AgentCrew#-team-roles) ·
+[🚀 Contributing](https://github.com/none-ai/AgentCrew#-contributing) ·
+[💬 Discussion](https://github.com/none-ai/AgentCrew/discussions)
 
 </div>
 
 ---
 
-## ✨ 核心特性
+## ✨ Key Features
 
-| 特性 | 描述 |
-|------|------|
-| 🤖 **多智能体协作** | 支持专业角色：项目经理、架构师、开发工程师、测试工程师、技术文档工程师 |
-| 📋 **任务管理** | 智能任务分解、实时进度追踪、自动结果聚合 |
-| 🔄 **并行执行** | 多智能体并行处理，最大化并发效率 |
-| 📊 **状态追踪** | 深度集成看板系统，实时任务状态监控 |
-| 💬 **消息通信** | 智能体间消息传递、事件通知、发布/订阅模式 |
-| 🎯 **工作流编排** | 灵活的工作流定义，支持条件分支和循环 |
-| 🔀 **任务依赖图** | DAG任务依赖管理、拓扑排序、循环检测 |
-| 🔗 **连接池** | HTTP/数据库/WebSocket连接池、自动维护、健康检查 |
-| 💿 **状态持久化** | JSON/SQLite/内存后端、自动保存、状态恢复 |
-| 🛡️ **错误处理** | 智能体级和系统级错误恢复机制 |
-| 📈 **可扩展性** | 插件化架构，轻松添加新的智能体类型 |
+| Feature | Description |
+|---------|-------------|
+| 🤖 **Multi-Agent Collaboration** | Supports professional roles: Project Manager, Architect, Developer, QA Engineer, Technical Writer |
+| 📋 **Task Management** | Intelligent task decomposition, real-time progress tracking, automatic result aggregation |
+| 🔄 **Parallel Execution** | Multi-agent parallel processing, maximizing concurrency efficiency |
+| 📊 **Status Tracking** | Deep integration with Kanban system, real-time task status monitoring |
+| 💬 **Message Communication** | Inter-agent message passing, event notifications, pub/sub pattern |
+| 🎯 **Workflow Orchestration** | Flexible workflow definition, support for conditional branches and loops |
+| 🔀 **Task Dependency Graph** | DAG task dependency management, topological sorting, cycle detection |
+| 🔗 **Connection Pool** | HTTP/Database/WebSocket connection pool, auto-maintenance, health checks |
+| 💿 **State Persistence** | JSON/SQLite/In-memory backends, auto-save, state recovery |
+| 🛡️ **Error Handling** | Agent-level and system-level error recovery mechanisms |
+| 📈 **Extensibility** | Plugin architecture, easily add new agent types |
 
 ---
 
-## 🎯 应用场景
+## 🎯 Use Cases
 
 ```mermaid
 graph LR
-    subgraph UseCases["📌 应用场景"]
-        UC1[💻 代码开发] --> PR[📝 生成 PR]
-        UC2[🧪 自动化测试] --> TR[📊 测试报告]
-        UC3[📚 文档生成] --> DOC[📄 技术文档]
-        UC4[🔍 代码审查] --> REV[💡 审查意见]
-        UC5[🚀 部署自动化] --> DEPLOY[☁️ 部署]
+    subgraph UseCases["📌 Use Cases"]
+        UC1[💻 Code Development] --> PR[📝 Generate PR]
+        UC2[🧪 Automated Testing] --> TR[📊 Test Report]
+        UC3[📚 Documentation] --> DOC[📄 Technical Docs]
+        UC4[🔍 Code Review] --> REV[💡 Review Comments]
+        UC5[🚀 Deployment Automation] --> DEPLOY[☁️ Deploy]
     end
 ```
 
-### 🏢 企业级应用
+### 🏢 Enterprise Applications
 
-- **软件开发团队**：自动化代码生成、审查、测试
-- **DevOps 团队**：CI/CD 流程自动化
-- **技术文档团队**：自动化 API 文档生成
-- **QA 团队**：自动化测试用例生成与执行
+- **Software Development Teams**: Automated code generation, review, testing
+- **DevOps Teams**: CI/CD pipeline automation
+- **Technical Documentation Teams**: Automated API documentation generation
+- **QA Teams**: Automated test case generation and execution
 
 ---
 
-## 📦 安装
+## 📦 Installation
 
 ```bash
 # Install via pip
@@ -91,54 +91,54 @@ pip install -e .
 
 ---
 
-## 🚀 快速开始
+## 🚀 Quick Start
 
 ```python
 from AgentCrew import load_teams, get_executor, get_communication, MessageType
 
-# 1. 加载智能体团队
+# 1. Load agent teams
 teams = load_teams()
 team = teams.get("AgentCrew_dev")
 
-# 2. 创建任务
+# 2. Create a task
 executor = get_executor()
 task = executor.create_task(
-    title="开发用户认证模块",
-    description="实现登录、注册和权限验证功能",
+    title="Develop User Authentication Module",
+    description="Implement login, registration, and permission verification",
     task_type="development"
 )
 
-# 3. 分配任务
+# 3. Assign task
 executor.assign_task(task.id, "Developer-A")
 
-# 4. 执行任务
+# 4. Execute task
 result = executor.execute_task(task.id)
 
-# 5. 发送通知
+# 5. Send notification
 comm = get_communication()
 comm.send_message(
     sender="System",
     receiver="PM-001",
-    content=f"任务 {task.title} 已完成",
+    content=f"Task {task.title} completed",
     msg_type=MessageType.NOTIFICATION
 )
 ```
 
-### 🔧 高级用法：自定义智能体
+### 🔧 Advanced: Custom Agents
 
 ```python
 from AgentCrew import Agent, AgentTeam
 
-# 创建自定义智能体
+# Create custom agent
 class CustomAgent(Agent):
     def __init__(self, name: str, role: str):
         super().__init__(name, role)
     
     def process(self, task):
-        # 自定义处理逻辑
+        # Custom processing logic
         return {"status": "completed", "result": "..."}
 
-# 创建自定义团队
+# Create custom team
 custom_team = AgentTeam(
     name="MyTeam",
     agents=[
@@ -147,46 +147,46 @@ custom_team = AgentTeam(
     ]
 )
 
-# 使用自定义团队
+# Use custom team
 executor = get_executor()
 result = executor.execute_team_task(custom_team, task)
 ```
 
 ---
 
-## 🏗️ 系统架构
+## 🏗️ Architecture
 
 ```mermaid
 graph TB
-    subgraph Client["📱 客户端层"]
+    subgraph Client["📱 Client Layer"]
         API[🔌 REST API]
-        CLI[⌨️ CLI 工具]
+        CLI[⌨️ CLI Tool]
         SDK[📦 Python SDK]
     end
     
-    subgraph Core["⚙️ 核心引擎"]
-        TM[📋 任务管理器]
-        TE[🔄 任务执行器]
-        TS[⚡ 任务调度器]
-        MB[💬 消息总线]
-        ST[📊 状态追踪器]
-        DG[🔀 依赖图引擎]
-        CP[🔗 连接池管理]
-        PS[💿 状态持久化]
+    subgraph Core["⚙️ Core Engine"]
+        TM[📋 Task Manager]
+        TE[🔄 Task Executor]
+        TS[⚡ Task Scheduler]
+        MB[💬 Message Bus]
+        ST[📊 Status Tracker]
+        DG[🔀 Dependency Graph Engine]
+        CP[🔗 Connection Pool Manager]
+        PS[💿 State Persistence]
     end
     
-    subgraph Agents["🤖 智能体层"]
-        PM[🧑‍💼 项目经理]
-        ARCH[🏗️ 架构师]
-        DEV[💻 开发工程师]
-        QA[🧪 测试工程师]
-        TW[📝 技术文档工程师]
+    subgraph Agents["🤖 Agent Layer"]
+        PM[🧑‍💼 Project Manager]
+        ARCH[🏗️ Architect]
+        DEV[💻 Developer]
+        QA[🧪 QA Engineer]
+        TW[📝 Technical Writer]
     end
     
-    subgraph Storage["💾 存储层"]
-        DB[(🗄️ 数据库)]
-        KC[(📝 看板)]
-        CM[(💬 消息队列)]
+    subgraph Storage["💾 Storage Layer"]
+        DB[(🗄️ Database)]
+        KC[(📝 Kanban)]
+        CM[(💬 Message Queue)]
     end
     
     API --> TM
@@ -210,37 +210,37 @@ graph TB
     MB --> CM
 ```
 
-### 🔄 系统工作流
+### 🔄 System Workflow
 
 ```mermaid
 sequenceDiagram
-    participant 用户
-    participant 任务管理器
-    participant 调度器
-    participant 智能体
-    participant 状态追踪
-    participant 看板
+    participant User
+    participant TaskManager
+    participant Scheduler
+    participant Agent
+    participant StatusTracker
+    participant Kanban
     
-    用户->>任务管理器: 创建任务
-    任务管理器->>调度器: 分解并调度
-    调度器->>智能体: 并行分配任务
-    智能体->>状态追踪: 更新状态
-    状态追踪->>看板: 同步看板
-    看板-->>用户: 实时进度
-    智能体->>任务管理器: 返回结果
-    任务管理器->>用户: 聚合输出
+    User->>TaskManager: Create task
+    TaskManager->>Scheduler: Decompose and schedule
+    Scheduler->>Agent: Assign tasks in parallel
+    Agent->>StatusTracker: Update status
+    StatusTracker->>Kanban: Sync to Kanban
+    Kanban-->>User: Real-time progress
+    Agent->>TaskManager: Return result
+    TaskManager->>User: Aggregate output
 ```
 
-### 🔧 智能体内部架构
+### 🔧 Agent Internal Architecture
 
 ```mermaid
 flowchart TB
-    subgraph Agent["🤖 智能体"]
-        INPUT[📥 任务输入]
-        PARSE[📝 任务解析]
-        PLAN[📋 任务规划]
-        EXEC[⚡ 执行]
-        OUTPUT[📤 结果输出]
+    subgraph Agent["🤖 Agent"]
+        INPUT[📥 Task Input]
+        PARSE[📝 Task Parsing]
+        PLAN[📋 Task Planning]
+        EXEC[⚡ Execution]
+        OUTPUT[📤 Result Output]
         
         INPUT --> PARSE
         PARSE --> PLAN
@@ -248,11 +248,11 @@ flowchart TB
         EXEC --> OUTPUT
     end
     
-    subgraph Tools["🛠️ 工具层"]
-        LLM[🧠 LLM 推理]
-        SEARCH[🔍 信息检索]
-        CODE[💻 代码执行]
-        API[🌐 API 调用]
+    subgraph Tools["🛠️ Tools Layer"]
+        LLM[🧠 LLM Reasoning]
+        SEARCH[🔍 Information Retrieval]
+        CODE[💻 Code Execution]
+        API[🌐 API Calls]
     end
     
     EXEC --> LLM
@@ -263,57 +263,57 @@ flowchart TB
 
 ```
 AgentCrew/
-├── agents/              # 智能体定义和团队管理
-│   └── __init__.py      # Agent, AgentTeam 类
-├── tasks/              # 任务定义
-├── config/             # 配置文件
-├── executor.py         # 任务执行引擎
-├── scheduler.py        # 任务调度器
-├── communication.py    # 消息通信模块
-└── data/              # 数据存储
+├── agents/              # Agent definitions and team management
+│   └── __init__.py      # Agent, AgentTeam classes
+├── tasks/              # Task definitions
+├── config/             # Configuration files
+├── executor.py         # Task execution engine
+├── scheduler.py        # Task scheduler
+├── communication.py    # Message communication module
+└── data/              # Data storage
 ```
 
-### 核心模块
+### Core Modules
 
-| 模块 | 功能 |
-|------|------|
-| `agents/` | 智能体角色定义、团队管理 |
-| `executor.py` | 任务分解、执行、结果聚合 |
-| `scheduler.py` | 任务调度、负载均衡、并行执行 |
-| `communication.py` | 消息总线、发布/订阅、智能体通信 |
-| `state_tracker.py` | 实时状态追踪、看板同步 |
-
----
-
-## 📊 性能对比
-
-| 指标 | 串行执行 | AgentCrew 并行 | 提升 |
-|------|----------|----------------|------|
-| 任务响应时间 | 100% | 20-40% | **60-80%** |
-| 吞吐量 | 1x | 3-5x | **300-500%** |
-| 资源利用率 | 30% | 85%+ | **180%+** |
+| Module | Function |
+|--------|----------|
+| `agents/` | Agent role definitions, team management |
+| `executor.py` | Task decomposition, execution, result aggregation |
+| `scheduler.py` | Task scheduling, load balancing, parallel execution |
+| `communication.py` | Message bus, pub/sub, inter-agent communication |
+| `state_tracker.py` | Real-time status tracking, Kanban sync |
 
 ---
 
-## 🔌 API 参考
+## 📊 Performance Comparison
 
-### 核心类
+| Metric | Serial Execution | AgentCrew Parallel | Improvement |
+|--------|------------------|-------------------|-------------|
+| Task Response Time | 100% | 20-40% | **60-80%** |
+| Throughput | 1x | 3-5x | **300-500%** |
+| Resource Utilization | 30% | 85%+ | **180%+** |
+
+---
+
+## 🔌 API Reference
+
+### Core Classes
 
 ```python
-# 任务执行器
+# Task Executor
 class TaskExecutor:
     def create_task(title, description, task_type) -> Task
     def assign_task(task_id, agent_id)
     def execute_task(task_id) -> Result
     def get_task_status(task_id) -> TaskStatus
 
-# 消息通信
+# Message Communication
 class MessageBus:
     def send_message(sender, receiver, content, msg_type)
     def subscribe(channel, callback)
     def publish(channel, message)
 
-# 状态追踪
+# Status Tracking
 class StateTracker:
     def update_status(task_id, status)
     def get_progress(task_id) -> Progress
@@ -322,43 +322,43 @@ class StateTracker:
 
 ---
 
-## 👥 团队角色
+## 👥 Team Roles
 
-| 角色 | 代码 | 职责 |
-|------|------|------|
-| 🧑‍💼 项目经理 | pm | 任务分解、进度追踪、结果聚合 |
-| 🏗️ 架构师 | architect | 系统设计、技术选型、代码审查 |
-| 💻 开发工程师 | developer | 代码实现、功能开发 |
-| 🧪 测试工程师 | qa | 测试用例创建、缺陷发现 |
-| 📝 技术文档工程师 | techwriter | 文档编写 |
+| Role | Code | Responsibilities |
+|------|------|-----------------|
+| 🧑‍💼 Project Manager | pm | Task decomposition, progress tracking, result aggregation |
+| 🏗️ Architect | architect | System design, tech selection, code review |
+| 💻 Developer | developer | Code implementation, feature development |
+| 🧪 QA Engineer | qa | Test case creation, defect discovery |
+| 📝 Technical Writer | techwriter | Documentation writing |
 
-## 🤝 贡献指南
+## 🤝 Contributing
 
-欢迎提交 Pull Request！请先阅读 [贡献指南](CONTRIBUTING.md)。
+Contributions welcome! Please read the [Contributing Guide](CONTRIBUTING.md).
 
-1. Fork 本项目
-2. 创建功能分支 (`git checkout -b feature/amazing-feature`)
-3. 提交更改 (`git commit -m 'Add amazing feature'`)
-4. 推送分支 (`git push origin feature/amazing-feature`)
-5. 打开 Pull Request
+1. Fork the project
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## 📄 开源协议
+## 📄 License
 
-本项目基于 MIT 协议开源 - 详见 [LICENSE](LICENSE) 文件。
+MIT License - see [LICENSE](LICENSE) file.
 
 ---
 
 <div align="center">
 
-**创建时间**: 2026-03-09 · **最后更新**: 2026-03-09
+**Created**: 2026-03-09 · **Last Updated**: 2026-03-09
 
 [![Stargazers over time](https://starchart.cc/none-ai/AgentCrew.svg)](https://github.com/none-ai/AgentCrew/stargazers)
 
 ---
 
-### 🏢 谁在使用 AgentCrew？
+### 🏢 Who Uses AgentCrew?
 
-我们欢迎更多开发者和组织 [分享你们的使用案例](https://github.com/none-ai/AgentCrew/discussions)！
+We welcome more developers and organizations to [share your use cases](https://github.com/none-ai/AgentCrew/discussions)!
 
 <a href="https://github.com/stlin256" target="_blank">
   <img src="https://avatars.githubusercontent.com/u/45954254?s=64" alt="stlin256" width="48" height="48" style="border-radius: 50%;">
@@ -366,9 +366,9 @@ class StateTracker:
 
 ---
 
-### 💖 赞助支持
+### 💖 Sponsor
 
-如果你喜欢这个项目，请考虑赞助我们的开发工作！
+If you like this project, please consider sponsoring our development!
 
 [![Sponsor](https://img.shields.io/badge/sponsor-❤️-pink?style=for-the-badge)](https://github.com/sponsors/none-ai)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy_Me_A_Coffee-☕-orange?style=for-the-badge)](https://buymeacoffee.com/stlin256sclaw)
