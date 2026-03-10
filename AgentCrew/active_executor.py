@@ -13,6 +13,13 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from .call_logger import get_logger, CallStatus
+
 WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
 LOG_DIR = f"{WORKSPACE}/logs"
 ACTIVE_EXECUTION_LOG = f"{LOG_DIR}/active_execution.log"
@@ -40,9 +47,17 @@ class ActivePatrol:
             f"{workspace}/AgentCrew/AgentCrew",
             f"{workspace}/data"
         ]
+        self._call_logger = get_logger()
     
     def check_project_status(self) -> Dict[str, Any]:
         """检查项目整体状态"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="check_project_status",
+            params={"workspace": self.workspace}
+        )
+        
         result = {
             "timestamp": datetime.now().isoformat(),
             "checks": {}
@@ -83,10 +98,24 @@ class ActivePatrol:
                 "files": log_files[:5]
             }
         
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"checks_count": len(result.get("checks", {}))},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         return result
     
     def check_code_quality(self) -> Dict[str, Any]:
         """检查代码质量"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="check_code_quality",
+            params={"targets": self.targets}
+        )
         result = {
             "timestamp": datetime.now().isoformat(),
             "issues": []
@@ -108,10 +137,25 @@ class ActivePatrol:
         except Exception as e:
             result["error"] = str(e)
         
+        duration_ms = (time.time() - start_time) * 1000
+        issues_count = len(result.get("issues", []))
+        self._call_logger.log_call_end(
+            call_id,
+            result={"issues_found": issues_count},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         return result
     
     def check_task_queue(self) -> Dict[str, Any]:
         """检查任务队列状态"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="check_task_queue",
+            params={"workspace": self.workspace}
+        )
         result = {
             "timestamp": datetime.now().isoformat(),
             "queue": {}
@@ -140,10 +184,24 @@ class ActivePatrol:
             except Exception as e:
                 result["error"] = str(e)
         
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"pending_tasks": result.get("queue", {}).get("pending", 0)},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         return result
     
     def check_system_resources(self) -> Dict[str, Any]:
         """检查系统资源状态"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="check_system_resources",
+            params={"workspace": self.workspace}
+        )
         result = {
             "timestamp": datetime.now().isoformat(),
             "resources": {}
@@ -175,9 +233,23 @@ class ActivePatrol:
         except:
             pass
         
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result=result.get("resources", {}),
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         return result
     
     def run_full_patrol(self) -> Dict[str, Any]:
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="run_full_patrol",
+            params={"workspace": self.workspace}
+        )
         """运行全面巡检"""
         logger.info("🔍 开始主动巡检...")
         
@@ -190,6 +262,14 @@ class ActivePatrol:
         result["code_quality"] = self.check_code_quality()
         result["task_queue"] = self.check_task_queue()
         result["system_resources"] = self.check_system_resources()
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"patrol_id": result.get("patrol_id")},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
         
         logger.info("✅ 巡检完成")
         
@@ -252,6 +332,16 @@ class IssueIdentifier:
     
     def __init__(self):
         self.rules = self._load_rules()
+        self._call_logger = get_logger()
+    
+    def identify(self, patrol_result: Dict[str, Any]) -> List[Dict[str, Any]]:
+        """识别问题并生成行动建议"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="issue_identify",
+            params={"rules_count": len(self.rules)}
+        )
     
     def _load_rules(self) -> List[Dict]:
         """加载识别规则"""
@@ -313,6 +403,14 @@ class IssueIdentifier:
         # 按优先级排序
         issues.sort(key=lambda x: x["priority"], reverse=True)
         
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"issues_identified": len(issues)},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         logger.info(f"📋 识别到 {len(issues)} 个需要处理的问题")
         
         return issues
@@ -344,6 +442,7 @@ class AutoExecutor:
         self.workspace = workspace
         self.actions = self._register_actions()
         self.execution_log = []
+        self._call_logger = get_logger()
     
     def _register_actions(self) -> Dict[str, Callable]:
         """注册可执行的动作"""
@@ -358,9 +457,21 @@ class AutoExecutor:
     
     def execute(self, issue: Dict[str, Any]) -> Dict[str, Any]:
         """执行指定动作"""
+        start_time = time.time()
         action = issue.get("action")
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action=f"execute_{action}",
+            params={"issue_name": issue.get("name")}
+        )
         
         if action not in self.actions:
+            self._call_logger.log_call_end(
+                call_id,
+                result={"reason": f"未知动作: {action}"},
+                status=CallStatus.FAILED,
+                duration_ms=0
+            )
             return {"status": "skipped", "reason": f"未知动作: {action}"}
         
         logger.info(f"⚡ 开始执行: {issue.get('name')}")
@@ -373,8 +484,24 @@ class AutoExecutor:
                 "action": action,
                 "result": result
             })
+            
+            duration_ms = (time.time() - start_time) * 1000
+            self._call_logger.log_call_end(
+                call_id,
+                result=result,
+                status=CallStatus.SUCCESS,
+                duration_ms=duration_ms
+            )
+            
             return result
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            self._call_logger.log_call_end(
+                call_id,
+                result={"error": str(e)},
+                status=CallStatus.FAILED,
+                duration_ms=duration_ms
+            )
             logger.error(f"❌ 执行失败: {e}")
             return {"status": "error", "error": str(e)}
     

@@ -2,12 +2,22 @@
 OpenAgent 任务执行引擎
 负责任务的分解、调度、执行和结果汇总
 """
+import os
+import sys
+import time
 import json
 import uuid
 import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Callable
 from enum import Enum
+
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from .call_logger import get_logger, CallStatus
 
 # Configure logging
 logging.basicConfig(
@@ -77,6 +87,7 @@ class TaskExecutor:
     def __init__(self):
         self.tasks: Dict[str, Task] = {}
         self.task_handlers: Dict[str, Callable] = {}
+        self._call_logger = get_logger()
     
     def register_handler(self, task_type: str, handler: Callable):
         """注册任务处理器"""
@@ -86,6 +97,13 @@ class TaskExecutor:
                     task_type: str = "default", parent_id: str = None,
                     metadata: Dict = None) -> Task:
         """创建任务"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="executor",
+            action="create_task",
+            params={"title": title, "task_type": task_type}
+        )
+        
         task = Task(title, description, parent_id)
         task.metadata["task_type"] = task_type
         if metadata:
@@ -96,6 +114,14 @@ class TaskExecutor:
         # 如果有父任务，添加到子任务列表
         if parent_id and parent_id in self.tasks:
             self.tasks[parent_id].subtasks.append(task)
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"task_id": task.id},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
         
         return task
     
@@ -165,7 +191,20 @@ class TaskExecutor:
     
     def execute_task(self, task_id: str) -> Dict:
         """执行任务"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="executor",
+            action="execute_task",
+            params={"task_id": task_id}
+        )
+        
         if task_id not in self.tasks:
+            self._call_logger.log_call_end(
+                call_id,
+                result={"message": "Task not found"},
+                status=CallStatus.FAILED,
+                duration_ms=0
+            )
             return {"status": "error", "message": "Task not found"}
         
         task = self.tasks[task_id]
@@ -178,11 +217,35 @@ class TaskExecutor:
                 self.start_task(task_id)
                 result = handler(task)
                 self.complete_task(task_id, result)
+                
+                duration_ms = (time.time() - start_time) * 1000
+                self._call_logger.log_call_end(
+                    call_id,
+                    result=result,
+                    status=CallStatus.SUCCESS,
+                    duration_ms=duration_ms
+                )
+                
                 return {"status": "ok", "result": result}
             except Exception as e:
                 self.fail_task(task_id, str(e))
+                
+                duration_ms = (time.time() - start_time) * 1000
+                self._call_logger.log_call_end(
+                    call_id,
+                    result={"error": str(e)},
+                    status=CallStatus.FAILED,
+                    duration_ms=duration_ms
+                )
+                
                 return {"status": "error", "message": str(e)}
         else:
+            self._call_logger.log_call_end(
+                call_id,
+                result={"message": f"No handler for task type: {task_type}"},
+                status=CallStatus.FAILED,
+                duration_ms=0
+            )
             return {"status": "error", "message": f"No handler for task type: {task_type}"}
     
     def get_task(self, task_id: str) -> Optional[Task]:

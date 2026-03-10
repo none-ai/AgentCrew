@@ -2,14 +2,23 @@
 自动清理器核心模块
 """
 import os
+import sys
 import json
 import shutil
+import time
 import logging
 from abc import ABC, abstractmethod
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 from pathlib import Path
 from enum import Enum
+
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from ..call_logger import get_logger, CallStatus
 
 logger = logging.getLogger(__name__)
 
@@ -171,6 +180,8 @@ class AutoCleaner:
             "files": FileCleaner(data_dir),
             "logs": LogCleaner(data_dir)
         }
+        
+        self._call_logger = get_logger()
     
     def clean_all(
         self,
@@ -200,6 +211,21 @@ class AutoCleaner:
         Returns:
             总体统计信息
         """
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="cleanup",
+            action="clean_all",
+            params={
+                "policy": policy.value,
+                "max_age_days": max_age_days,
+                "archive": archive,
+                "clean_tasks": clean_tasks,
+                "clean_data": clean_data,
+                "clean_files": clean_files,
+                "clean_logs": clean_logs
+            }
+        )
+        
         results = {
             "timestamp": datetime.now().isoformat(),
             "policy": policy.value,
@@ -252,12 +278,43 @@ class AutoCleaner:
         
         results["summary"] = total_stats
         
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result=total_stats,
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         # 保存清理日志
         self._save_cleanup_log(results)
         
         return results
     
     def clean_expired_tasks(self, max_age_days: int = 30, **kwargs) -> Dict[str, Any]:
+        """清理过期任务"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="cleanup",
+            action="clean_expired_tasks",
+            params={"max_age_days": max_age_days}
+        )
+        
+        result = self.cleaners["tasks"].clean(
+            policy=CleanupPolicy.EXPIRED_ONLY,
+            max_age_days=max_age_days,
+            **kwargs
+        )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result=result,
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
+        return result
         """清理过期任务"""
         return self.cleaners["tasks"].clean(
             policy=CleanupPolicy.EXPIRED_ONLY,

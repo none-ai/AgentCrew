@@ -2,11 +2,21 @@
 记忆管理器
 整合清理和记忆功能，提供统一的接口
 """
+import os
+import sys
+import time
 import json
 import logging
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, List
+
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from ..call_logger import get_logger, CallStatus
 
 from .vector_store import VectorStore
 from .long_term import LongTermMemory
@@ -26,6 +36,7 @@ class MemoryManager:
     ):
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        self._call_logger = get_logger()
         
         # 初始化各组件
         vector_store = VectorStore(
@@ -88,10 +99,25 @@ class MemoryManager:
         metadata: Optional[Dict] = None
     ) -> bool:
         """添加消息"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="memory",
+            action="add_message",
+            params={"role": role, "content_length": len(content)}
+        )
+        
         self.short_term.add_message(role, content, metadata)
         
         # 自动保存会话状态
         self._save_session()
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"status": "success"},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
         
         return True
     
@@ -115,11 +141,26 @@ class MemoryManager:
         metadata: Optional[Dict] = None
     ) -> Optional[str]:
         """添加长期记忆"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="memory",
+            action="remember",
+            params={"memory_type": memory_type, "importance": importance, "content_length": len(content)}
+        )
+        
         memory_id = self.long_term.add(
             content=content,
             memory_type=memory_type,
             importance=importance,
             metadata=metadata
+        )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"memory_id": memory_id},
+            status=CallStatus.SUCCESS if memory_id else CallStatus.FAILED,
+            duration_ms=duration_ms
         )
         
         logger.info(f"添加长期记忆: {memory_id}")
@@ -132,15 +173,49 @@ class MemoryManager:
         limit: int = 5
     ) -> List[Dict[str, Any]]:
         """检索记忆"""
-        return self.long_term.search(
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="memory",
+            action="recall",
+            params={"query": query, "memory_type": memory_type, "limit": limit}
+        )
+        
+        results = self.long_term.search(
             query=query,
             memory_type=memory_type,
             top_k=limit
         )
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"results_count": len(results)},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
+        return results
     
     def forget(self, memory_id: str) -> bool:
         """删除记忆"""
-        return self.long_term.delete(memory_id)
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="memory",
+            action="forget",
+            params={"memory_id": memory_id}
+        )
+        
+        result = self.long_term.delete(memory_id)
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"deleted": result},
+            status=CallStatus.SUCCESS if result else CallStatus.FAILED,
+            duration_ms=duration_ms
+        )
+        
+        return result
     
     # === 上下文操作 ===
     

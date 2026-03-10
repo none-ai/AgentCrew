@@ -2,14 +2,23 @@
 向量存储模块
 支持 ChromaDB 和 FAISS 两种向量数据库
 """
-import logging
 import os
+import sys
+import time
+import logging
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict, Any, Optional, Tuple
 from dataclasses import dataclass, asdict
+
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from ..call_logger import get_logger, CallStatus
 
 logger = logging.getLogger(__name__)
 
@@ -622,6 +631,7 @@ class VectorStore:
     
     def __init__(self, backend: str = "chroma", persist_directory: str = "./data/memory"):
         self.backend = get_vector_store(backend, persist_directory)
+        self._call_logger = get_logger()
     
     def add_memory(
         self,
@@ -632,6 +642,13 @@ class VectorStore:
         """添加记忆"""
         import uuid
         
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="vector_store",
+            action="add_memory",
+            params={"content_length": len(content), "memory_id": memory_id}
+        )
+        
         memory_id = memory_id or str(uuid.uuid4())
         
         item = MemoryItem(
@@ -640,7 +657,17 @@ class VectorStore:
             metadata=metadata
         )
         
-        if self.backend.add([item]):
+        result = self.backend.add([item])
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"memory_id": memory_id if result else None},
+            status=CallStatus.SUCCESS if result else CallStatus.FAILED,
+            duration_ms=duration_ms
+        )
+        
+        if result:
             return memory_id
         return None
     
@@ -651,6 +678,13 @@ class VectorStore:
         filters: Optional[Dict[str, Any]] = None
     ) -> List[Dict[str, Any]]:
         """搜索记忆"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="vector_store",
+            action="search_memories",
+            params={"query": query, "top_k": top_k}
+        )
+        
         results = self.backend.search(query, top_k)
         
         # 应用过滤器
@@ -659,6 +693,14 @@ class VectorStore:
                 r for r in results
                 if all(r.metadata.get(k) == v for k, v in filters.items())
             ]
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"results_count": len(results)},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
         
         return [
             {

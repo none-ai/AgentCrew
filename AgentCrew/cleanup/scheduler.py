@@ -2,12 +2,21 @@
 清理调度器
 定时执行自动清理任务
 """
+import os
+import sys
 import logging
 import threading
 import time
 from datetime import datetime
 from typing import Dict, Any, Optional, Callable, List
 from enum import Enum
+
+# 导入 call_logger
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+try:
+    from call_logger import get_logger, CallStatus
+except ImportError:
+    from ..call_logger import get_logger, CallStatus
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +36,7 @@ class CleanupScheduler:
         self.data_dir = data_dir
         self.running = False
         self._thread: Optional[threading.Thread] = None
+        self._call_logger = get_logger()
         
         # 调度配置
         self.interval = ScheduleInterval.DAILY
@@ -48,13 +58,34 @@ class CleanupScheduler:
     
     def start(self):
         """启动调度器"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="cleanup_scheduler",
+            action="start",
+            params={"interval": self.interval.value, "hour": self.hour}
+        )
+        
         if self.running:
             logger.warning("清理调度器已在运行")
+            self._call_logger.log_call_end(
+                call_id,
+                result={"reason": "already running"},
+                status=CallStatus.FAILED,
+                duration_ms=0
+            )
             return
         
         self.running = True
         self._thread = threading.Thread(target=self._run_loop, daemon=True)
         self._thread.start()
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"status": "started"},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
         
         logger.info(f"清理调度器已启动，间隔: {self.interval.value}")
     
@@ -153,6 +184,13 @@ class CleanupScheduler:
     
     def run_now(self, **kwargs) -> Dict[str, Any]:
         """立即执行清理"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="cleanup_scheduler",
+            action="run_now",
+            params=kwargs
+        )
+        
         logger.info("立即执行清理任务")
         
         try:
@@ -160,6 +198,14 @@ class CleanupScheduler:
             
             cleaner = get_cleaner(self.data_dir)
             results = cleaner.clean_all(**kwargs)
+            
+            duration_ms = (time.time() - start_time) * 1000
+            self._call_logger.log_call_end(
+                call_id,
+                result=results.get("summary", {}),
+                status=CallStatus.SUCCESS,
+                duration_ms=duration_ms
+            )
             
             self.history.append({
                 "timestamp": datetime.now().isoformat(),
