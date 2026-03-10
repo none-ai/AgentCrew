@@ -18,9 +18,11 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 # 支持直接运行和模块导入两种方式
 try:
+    from .call_logger import get_logger, CallStatus
     from .self_inspector import CodeInspector, run_inspection
     from .self_iteration import AutoFixer, run_auto_fix, suggest_improvements
 except ImportError:
+    from call_logger import get_logger, CallStatus
     from self_inspector import CodeInspector, run_inspection
     from self_iteration import AutoFixer, run_auto_fix, suggest_improvements
 
@@ -99,6 +101,7 @@ class SelfEvolution:
         self.auto_fix = auto_fix
         self.inspector = CodeInspector()
         self.history = EvolutionHistory()
+        self._call_logger = get_logger()
         self.stats = {
             "total_runs": 0,
             "issues_found": 0,
@@ -108,6 +111,13 @@ class SelfEvolution:
     
     def inspect(self, target_dir: str = None) -> Dict[str, Any]:
         """执行自我巡检"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="self_evolution",
+            action="inspect",
+            params={"target_dir": target_dir}
+        )
+        
         logger.info("🔍 开始自我巡检...")
         
         if target_dir:
@@ -118,6 +128,15 @@ class SelfEvolution:
             self.inspector.inspect_directory(f"{self.workspace}/AgentCrew/AgentCrew")
         
         report = self.inspector.get_report()
+        
+        duration_ms = (time.time() - start_time) * 1000
+        self._call_logger.log_call_end(
+            call_id,
+            result={"issues_found": report['stats']['issues_found']},
+            status=CallStatus.SUCCESS,
+            duration_ms=duration_ms
+        )
+        
         logger.info(f"📊 巡检完成: 发现 {report['stats']['issues_found']} 个问题")
         
         return report
