@@ -1,0 +1,17 @@
+{
+  "interval_seconds": 3600,
+  "auto_fix": false,
+  "target_dirs": [
+    "/home/stlin-claw/.openclaw/workspace-taizi/scripts",
+    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew"
+  ],
+  "enabled": true,
+  "notification": false,
+  "max_issues_per_cycle": 50,
+  "exclude_patterns": [
+    "__pycache__",
+    "*.pyc",
+    ".git",
+    "node_modules"
+  ]
+}

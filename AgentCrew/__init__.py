@@ -22,6 +22,10 @@ from .dependency_graph import DependencyGraph, get_dependency_graph
 from .connection_pool import ConnectionPool, PoolManager, get_pool_manager, create_pool
 from .persistence import StateManager, JSONFileBackend, SQLiteBackend, get_state_manager
 
+from .self_inspector import CodeInspector, run_inspection
+from .self_iteration import AutoFixer, run_auto_fix
+from .self_evolution import SelfEvolution, EvolutionHistory
+
 __all__ = [
     # Core
     "get_executor",
@@ -48,4 +52,11 @@ __all__ = [
     "JSONFileBackend",
     "SQLiteBackend",
     "get_state_manager",
+    # Self Evolution
+    "CodeInspector",
+    "run_inspection",
+    "AutoFixer",
+    "run_auto_fix",
+    "SelfEvolution",
+    "EvolutionHistory",
 ]
