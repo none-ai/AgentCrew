@@ -4,9 +4,17 @@ OpenAgent 任务执行引擎
 """
 import json
 import uuid
+import logging
 from datetime import datetime
 from typing import Dict, List, Optional, Callable
 from enum import Enum
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 class TaskStatus(Enum):
     """任务状态"""
