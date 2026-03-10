@@ -386,6 +386,13 @@ class IssueIdentifier:
     
     def identify(self, patrol_result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """识别问题并决定行动"""
+        start_time = time.time()
+        call_id = self._call_logger.log_call_start(
+            source="active_executor",
+            action="issue_identify",
+            params={"rules_count": len(self.rules)}
+        )
+        
         issues = []
         
         for rule in self.rules:
