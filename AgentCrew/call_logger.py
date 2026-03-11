@@ -51,9 +51,6 @@ class CallLogger:
         
         # 回调函数
         self._callbacks: List[Callable] = []
-        
-        # 统计信息（从数据库获取）
-        self._stats_lock = threading.RLock()
     
     def _init_db(self):
         """初始化数据库表"""
@@ -73,6 +70,10 @@ class CallLogger:
                 duration_ms REAL,
                 summary TEXT,
                 metadata TEXT,
+                tokens_used INTEGER DEFAULT 0,
+                tokens_prompt INTEGER DEFAULT 0,
+                tokens_completion INTEGER DEFAULT 0,
+                cost_usd REAL DEFAULT 0,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -90,6 +91,8 @@ class CallLogger:
                 success_count INTEGER,
                 failed_count INTEGER,
                 avg_duration_ms REAL,
+                total_tokens INTEGER,
+                total_cost_usd REAL,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
@@ -114,9 +117,13 @@ class CallLogger:
         status: CallStatus = CallStatus.PENDING,
         duration_ms: float = 0,
         metadata: Optional[Dict[str, Any]] = None,
-        call_id: Optional[str] = None
+        call_id: Optional[str] = None,
+        tokens_used: int = 0,
+        tokens_prompt: int = 0,
+        tokens_completion: int = 0,
+        cost_usd: float = 0
     ) -> str:
-        """记录一次调用"""
+        """记录一次调用 (非阻塞)"""
         call_id = call_id or f"call-{uuid.uuid4().hex[:12]}"
         
         # 截断过大的数据
@@ -136,11 +143,16 @@ class CallLogger:
             "status": status.value,
             "duration_ms": duration_ms,
             "summary": summary,
-            "metadata": metadata or {}
+            "metadata": metadata or {},
+            "tokens_used": tokens_used,
+            "tokens_prompt": tokens_prompt,
+            "tokens_completion": tokens_completion,
+            "cost_usd": cost_usd
         }
         
-        # 写入数据库
-        self._write_record(record)
+        # 异步写入数据库（非阻塞）
+        thread = threading.Thread(target=self._write_record, args=(record,), daemon=True)
+        thread.start()
         
         # 触发回调
         for callback in self._callbacks:
@@ -154,10 +166,9 @@ class CallLogger:
     def _truncate_data(self, data: Any, max_size: int = 1000) -> Any:
         """截断过大的数据"""
         if isinstance(data, dict):
-            # 只保留键，值截断
             return {k: self._truncate_data(v, max_size) for k, v in data.items()}
         elif isinstance(data, list):
-            return data[:10]  # 只保留前10个
+            return data[:10]
         elif isinstance(data, str):
             return data[:max_size] if len(data) > max_size else data
         else:
@@ -175,28 +186,35 @@ class CallLogger:
     
     def _write_record(self, record: Dict):
         """写入数据库"""
-        conn = self._get_connection()
-        cursor = conn.cursor()
-        
-        cursor.execute("""
-            INSERT OR REPLACE INTO calls 
-            (call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            record["call_id"],
-            record["timestamp"],
-            record["source"],
-            record["action"],
-            json.dumps(record.get("params", {})),
-            json.dumps(record.get("result", {})),
-            record["status"],
-            record.get("duration_ms", 0),
-            record.get("summary", ""),
-            json.dumps(record.get("metadata", {}))
-        ))
-        
-        conn.commit()
-        conn.close()
+        try:
+            conn = self._get_connection()
+            cursor = conn.cursor()
+            
+            cursor.execute("""
+                INSERT OR REPLACE INTO calls 
+                (call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                record["call_id"],
+                record["timestamp"],
+                record["source"],
+                record["action"],
+                json.dumps(record.get("params", {})),
+                json.dumps(record.get("result", {})),
+                record["status"],
+                record.get("duration_ms", 0),
+                record.get("summary", ""),
+                json.dumps(record.get("metadata", {})),
+                record.get("tokens_used", 0),
+                record.get("tokens_prompt", 0),
+                record.get("tokens_completion", 0),
+                record.get("cost_usd", 0)
+            ))
+            
+            conn.commit()
+            conn.close()
+        except Exception as e:
+            print(f"写入数据库失败: {e}")
     
     def log_call_start(
         self,
@@ -220,19 +238,22 @@ class CallLogger:
         result: Optional[Dict[str, Any]] = None,
         status: CallStatus = CallStatus.SUCCESS,
         duration_ms: float = 0,
-        metadata: Optional[Dict[str, Any]] = None
+        metadata: Optional[Dict[str, Any]] = None,
+        tokens_used: int = 0,
+        tokens_prompt: int = 0,
+        tokens_completion: int = 0,
+        cost_usd: float = 0
     ):
         """记录调用结束"""
-        # 更新记录
-        conn = self._get_connection()
-        cursor = conn.cursor()
-        
         truncated_result = self._truncate_data(result) if result else {}
         summary = self._generate_summary("", truncated_result, status)
         
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
         cursor.execute("""
             UPDATE calls 
-            SET result = ?, status = ?, duration_ms = ?, summary = ?, metadata = ?
+            SET result = ?, status = ?, duration_ms = ?, summary = ?, metadata = ?, tokens_used = ?, tokens_prompt = ?, tokens_completion = ?, cost_usd = ?
             WHERE call_id = ?
         """, (
             json.dumps(truncated_result),
@@ -240,13 +261,16 @@ class CallLogger:
             duration_ms,
             summary,
             json.dumps(metadata or {}),
+            tokens_used,
+            tokens_prompt,
+            tokens_completion,
+            cost_usd,
             call_id
         ))
         
         conn.commit()
         conn.close()
         
-        # 触发回调
         for callback in self._callbacks:
             try:
                 callback({"call_id": call_id, "status": status.value})
@@ -265,7 +289,7 @@ class CallLogger:
         
         if source:
             cursor.execute("""
-                SELECT call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata
+                SELECT call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd
                 FROM calls 
                 WHERE source = ?
                 ORDER BY timestamp DESC
@@ -273,7 +297,7 @@ class CallLogger:
             """, (source, limit, offset))
         else:
             cursor.execute("""
-                SELECT call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata
+                SELECT call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd
                 FROM calls 
                 ORDER BY timestamp DESC
                 LIMIT ? OFFSET ?
@@ -294,7 +318,11 @@ class CallLogger:
                 "status": row[6],
                 "duration_ms": row[7],
                 "summary": row[8],
-                "metadata": json.loads(row[9]) if row[9] else {}
+                "metadata": json.loads(row[9]) if row[9] else {},
+                "tokens_used": row[10],
+                "tokens_prompt": row[11],
+                "tokens_completion": row[12],
+                "cost_usd": row[13]
             })
         
         return results
@@ -309,7 +337,9 @@ class CallLogger:
                 COUNT(*) as total,
                 SUM(CASE WHEN status = 'success' THEN 1 ELSE 0 END) as success,
                 SUM(CASE WHEN status = 'failed' THEN 1 ELSE 0 END) as failed,
-                AVG(duration_ms) as avg_duration
+                COALESCE(AVG(duration_ms), 0) as avg_duration,
+                COALESCE(SUM(tokens_used), 0) as total_tokens,
+                COALESCE(SUM(cost_usd), 0) as total_cost
             FROM calls 
             WHERE timestamp >= datetime('now', '-' || ? || ' days')
         """, (days,))
@@ -321,7 +351,9 @@ class CallLogger:
             "total_calls": row[0] or 0,
             "success_count": row[1] or 0,
             "failed_count": row[2] or 0,
-            "avg_duration_ms": row[3] or 0
+            "avg_duration_ms": row[3] or 0,
+            "total_tokens": row[4] or 0,
+            "total_cost_usd": row[5] or 0
         }
     
     def cleanup_old_records(self, days: int = 30):
@@ -349,7 +381,7 @@ class CallLogger:
 
 # 全局实例获取函数
 _logger_instance = None
-def get_logger(db_path: str = "./data/call_logs/calls.db") -> CallLogger:
+def get_logger(db_path: str = None) -> CallLogger:
     """获取日志器全局实例"""
     global _logger_instance
     if _logger_instance is None:
