@@ -45,7 +45,7 @@ def build_task_timeline(tasks):
                     'start': start,
                     'end': end
                 })
-        except:
+        except Exception:
             pass
     
     return sorted(timeline, key=lambda x: x['start'])

@@ -27,14 +27,14 @@ class FileItem:
         try:
             # Linux 上使用 st_ctime 作为创建时间
             return datetime.fromtimestamp(self.path.stat().st_ctime)
-        except:
+        except Exception:
             return None
     
     @property
     def modified_at(self) -> Optional[datetime]:
         try:
             return datetime.fromtimestamp(self.path.stat().st_mtime)
-        except:
+        except Exception:
             return None
     
     def is_expired(self, days: int) -> bool:
@@ -139,7 +139,7 @@ class FileCleaner(BaseCleaner):
                         mtime = datetime.fromtimestamp(file_path.stat().st_mtime)
                         if (datetime.now() - mtime).days > 90:
                             items.append(FileItem(file_path))
-                except:
+                except Exception:
                     pass
         
         return items
@@ -187,7 +187,7 @@ class FileCleaner(BaseCleaner):
                             "modified": mtime.isoformat(),
                             "age_days": (datetime.now() - mtime).days
                         })
-                except:
+                except Exception:
                     pass
         
         return sorted(large_files, key=lambda x: x["size_mb"], reverse=True)
@@ -208,7 +208,7 @@ class FileCleaner(BaseCleaner):
             
             try:
                 stats["total_size_bytes"] += item.path.stat().st_size
-            except:
+            except Exception:
                 pass
         
         return stats

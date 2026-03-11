@@ -212,7 +212,7 @@ class ActivePatrol:
             stat = os.statvfs(self.workspace)
             free_gb = (stat.f_bavail * stat.f_frsize) / (1024**3)
             result["resources"]["disk_free_gb"] = round(free_gb, 2)
-        except:
+        except Exception:
             pass
         
         # 检查内存使用
@@ -224,13 +224,13 @@ class ActivePatrol:
                         available_kb = int(line.split()[1])
                         result["resources"]["mem_available_mb"] = available_kb / 1024
                         break
-        except:
+        except Exception:
             pass
         
         # 检查进程
         try:
             result["resources"]["openclaw_processes"] = self._count_processes("openclaw")
-        except:
+        except Exception:
             pass
         
         duration_ms = (time.time() - start_time) * 1000
@@ -280,7 +280,7 @@ class ActivePatrol:
         try:
             mtime = os.path.getmtime(path)
             return datetime.fromtimestamp(mtime).isoformat()
-        except:
+        except Exception:
             return None
     
     def _count_states(self, tasks: List[Dict]) -> Dict[str, int]:
@@ -309,7 +309,7 @@ class ActivePatrol:
                                 "state": task.get("state"),
                                 "days_stale": (datetime.now() - updated_dt.replace(tzinfo=None)).days
                             })
-                    except:
+                    except Exception:
                         pass
         
         return stale[:5]  # 最多返回5个
@@ -323,7 +323,7 @@ class ActivePatrol:
                 text=True
             )
             return len(result.stdout.strip().split("\n")) if result.stdout.strip() else 0
-        except:
+        except Exception:
             return 0
 
 
@@ -579,7 +579,7 @@ class AutoExecutor:
                     try:
                         os.remove(f"{log_dir}/{f}")
                         cleaned += 1
-                    except:
+                    except Exception:
                         pass
         
         return {"status": "success", "cleaned_files": cleaned}
@@ -622,7 +622,7 @@ class ActiveReporter:
             try:
                 with open(self.report_log, "r") as f:
                     return json.load(f)
-            except:
+            except Exception:
                 pass
         return []
     

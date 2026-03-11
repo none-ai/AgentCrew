@@ -159,7 +159,7 @@ def test_persistence():
     shutil.rmtree("./data/test_json", ignore_errors=True)
     try:
         os.remove("./data/test_state.db")
-    except:
+    except Exception:
         pass
     
     return True

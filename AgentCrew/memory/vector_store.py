@@ -361,7 +361,7 @@ class ChromaVectorStore(VectorStoreBase):
             if self.collection is None:
                 return 0
             return self.collection.count()
-        except:
+        except Exception:
             return 0
     
     def clear(self) -> bool:

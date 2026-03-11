@@ -25,14 +25,14 @@ class LogItem:
     def created_at(self) -> Optional[datetime]:
         try:
             return datetime.fromtimestamp(self.path.stat().st_ctime)
-        except:
+        except Exception:
             return None
     
     @property
     def modified_at(self) -> Optional[datetime]:
         try:
             return datetime.fromtimestamp(self.path.stat().st_mtime)
-        except:
+        except Exception:
             return None
     
     def is_expired(self, days: int) -> bool:
@@ -240,7 +240,7 @@ class LogCleaner(BaseCleaner):
         for item in items:
             try:
                 stats["total_size_bytes"] += item.path.stat().st_size
-            except:
+            except Exception:
                 pass
             
             ref_time = item.modified_at
@@ -271,7 +271,7 @@ class LogCleaner(BaseCleaner):
                         elif "DEBUG" in line.upper():
                             stats["by_level"]["debug"] += 1
                             break
-            except:
+            except Exception:
                 pass
         
         stats["oldest_log"] = oldest_time.isoformat() if oldest_time else None
@@ -303,7 +303,7 @@ class LogCleaner(BaseCleaner):
                         summary["logs_created"] += 1
                     
                     summary["total_size_bytes"] += log_file.stat().st_size
-                except:
+                except Exception:
                     pass
         
         return summary

@@ -75,7 +75,7 @@ def get_top_processes(limit=5):
                 'cpu': proc.info['cpu_percent'] or 0,
                 'memory': proc.info['memory_percent'] or 0
             })
-        except:
+        except Exception:
             pass
     
     # 按CPU排序
@@ -95,7 +95,7 @@ def save_metrics(metrics):
         try:
             with open(metrics_file) as f:
                 existing = json.load(f)
-        except:
+        except Exception:
             existing = []
     
     # 添加新指标

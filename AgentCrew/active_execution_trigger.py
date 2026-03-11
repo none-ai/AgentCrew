@@ -55,7 +55,7 @@ def load_config() -> dict:
             with open(config_file, 'r') as f:
                 config = json.load(f)
                 return {**default_config, **config}
-        except:
+        except Exception:
             pass
     
     return default_config
@@ -116,7 +116,7 @@ def run_active_execution(auto_execute: bool = True) -> dict:
                 output = result.stdout
                 if "issues_found" in output or "issues_identified" in output:
                     log(f"📊 {output.splitlines()[-1] if output else '完成'}")
-            except:
+            except Exception:
                 pass
             return {"status": "success", "output": result.stdout}
         else:
@@ -143,7 +143,7 @@ def check_running() -> bool:
         # 检查进程是否存在
         os.kill(pid, 0)
         return True
-    except:
+    except Exception:
         # PID 文件存在但进程不在，删除它
         remove_pid()
         return False

@@ -35,7 +35,7 @@ def calculate_task_duration(task):
             start = datetime.fromisoformat(task['started_at'])
             end = datetime.fromisoformat(task['completed_at'])
             return (end - start).total_seconds()
-        except:
+        except Exception:
             return 0
     return 0
 

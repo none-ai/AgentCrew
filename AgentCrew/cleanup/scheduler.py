@@ -113,7 +113,7 @@ class CleanupScheduler:
                 if self.on_error:
                     try:
                         self.on_error(e)
-                    except:
+                    except Exception:
                         pass
     
     def _should_run(self) -> bool:
@@ -179,7 +179,7 @@ class CleanupScheduler:
             if self.on_error:
                 try:
                     self.on_error(e)
-                except:
+                except Exception:
                     pass
     
     def run_now(self, **kwargs) -> Dict[str, Any]:

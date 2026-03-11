@@ -145,7 +145,7 @@ class CodeInspector:
                             if func_len > 100:
                                 self.log_issue("info", "quality", file_path,
                                              f"函数 '{node.name}' 过长 ({func_len} 行)", node.lineno)
-            except:
+            except Exception:
                 pass
             
             # 检查过长的行

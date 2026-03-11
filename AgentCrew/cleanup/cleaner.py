@@ -359,7 +359,7 @@ class AutoCleaner:
             try:
                 with open(log_file, 'r') as f:
                     existing = json.load(f)
-            except:
+            except Exception:
                 existing = []
         
         existing.append(results)
