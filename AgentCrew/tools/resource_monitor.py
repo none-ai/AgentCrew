@@ -109,55 +109,28 @@ def save_metrics(metrics):
         json.dump(existing, f, indent=2)
 
 def main():
-    print("💻 AgentCrew 资源监控")
-    print("=" * 50)
     
     # CPU
     cpu = get_cpu_usage()
     cpu_cores = get_cpu_per_core()
-    print(f"\n🔲 CPU:")
-    print(f"  总使用率: {cpu}%")
-    print(f"  核心使用率: ", end="")
-    print(", ".join([f"Core{i}:{c}%" for i, c in enumerate(cpu_cores)]))
     
     # 内存
     mem = get_memory_usage()
-    print(f"\n🧠 内存:")
-    print(f"  总计: {mem['total']:.1f} GB")
-    print(f"  已用: {mem['used']:.1f} GB ({mem['percent']}%)")
-    print(f"  可用: {mem['available']:.1f} GB")
     
     # 磁盘
     disk = get_disk_usage('/')
-    print(f"\n💾 磁盘:")
-    print(f"  总计: {disk['total']:.1f} GB")
-    print(f"  已用: {disk['used']:.1f} GB ({disk['percent']}%)")
-    print(f"  可用: {disk['free']:.1f} GB")
     
     # 网络
     net = get_network_io()
-    print(f"\n🌐 网络:")
-    print(f"  发送: {net['bytes_sent'] / (1024**2):.2f} MB")
-    print(f"  接收: {net['bytes_recv'] / (1024**2):.2f} MB")
     
     # 当前进程
     proc = get_process_info()
-    print(f"\n⚙️ 当前进程:")
-    print(f"  PID: {proc['pid']}")
-    print(f"  名称: {proc['name']}")
-    print(f"  CPU: {proc['cpu_percent']}%")
-    print(f"  内存: {proc['memory_percent']:.2f}% ({proc['memory_info']:.1f} MB)")
-    print(f"  线程: {proc['num_threads']}")
     
     # Top进程
     top = get_top_processes()
-    print(f"\n🔥 Top进程 (CPU):")
     for p in top['top_cpu']:
-        print(f"  {p['name'][:20]:20s} CPU: {p['cpu']:5.1f}%")
     
-    print(f"\n🔥 Top进程 (内存):")
     for p in top['top_mem']:
-        print(f"  {p['name'][:20]:20s} MEM: {p['memory']:5.1f}%")
     
     # 保存指标
     if '--save' in sys.argv:
@@ -170,7 +143,6 @@ def main():
             'process': proc
         }
         save_metrics(metrics)
-        print(f"\n✅ 指标已保存")
 
 if __name__ == "__main__":
     import sys

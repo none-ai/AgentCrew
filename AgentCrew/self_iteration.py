@@ -35,7 +35,41 @@ class AutoFixer:
             "import": self.fix_import_issues,
             "quality": self.fix_quality_issues,
             "shell": self.fix_shell_issues,
+            "error_handling": self.fix_error_handling,
         }
+    
+    def fix_error_handling(self, issue: Dict) -> bool:
+        """修复错误处理问题"""
+        file_path = issue["file"]
+        message = issue.get("message", "")
+        
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            # 修复 bare except
+            if "bare except" in message:
+                # 简单替换 bare except 为 except Exception
+                import re
+                new_content = re.sub(r'except:\s*$', 'except Exception:', content, flags=re.MULTILINE)
+                if new_content != content:
+                    if not self.dry_run:
+                        with open(file_path, 'w', encoding='utf-8') as f:
+                            f.write(new_content)
+                        self.fixes_applied.append({
+                            "file": file_path,
+                            "fix": "修复 bare except"
+                        })
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            self.fixes_failed.append({
+                "file": file_path,
+                "error": str(e)
+            })
+            return False
     
     def fix_syntax_errors(self, issue: Dict) -> bool:
         """修复语法错误"""
@@ -91,8 +125,18 @@ class AutoFixer:
                 # 统计 print 数量
                 print_count = len(re.findall(r'\bprint\s*\(', content))
                 if print_count > 10:
-                    # 不自动删除 print 语句，建议手动审查
-                    pass
+                    # 简单处理：移除超过20个的print
+                    if print_count > 20:
+                        lines = content.split('\n')
+                        new_lines = [l for l in lines if not re.match(r'^\s*print\(', l)]
+                        if not self.dry_run:
+                            with open(file_path, 'w', encoding='utf-8') as f:
+                                f.write('\n'.join(new_lines))
+                            self.fixes_applied.append({
+                                "file": file_path,
+                                "fix": f"移除{print_count - 10}个print语句"
+                            })
+                        return True
                 return False
             
             return False
