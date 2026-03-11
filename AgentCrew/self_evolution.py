@@ -29,7 +29,7 @@ except ImportError:
 
 WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
 LOG_DIR = f"{WORKSPACE}/logs"
-EVOLUTION_DB = f"{LOG_DIR}/evolution.db"
+EVOLUTION_DB = f"{WORKSPACE}/data/evolution.db"
 
 # 配置日志
 os.makedirs(LOG_DIR, exist_ok=True)

@@ -34,10 +34,14 @@ class CallLogger:
                     cls._instance = super().__new__(cls)
         return cls._instance
     
-    def __init__(self, db_path: str = "./data/call_logs/calls.db"):
+    def __init__(self, db_path: str = None):
         if hasattr(self, '_initialized'):
             return
         self._initialized = True
+        
+        # 默认路径为 workspace-taizi 下的 data 目录
+        if db_path is None:
+            db_path = "/home/stlin-claw/.openclaw/workspace-taizi/data/call_logs/calls.db"
         
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
