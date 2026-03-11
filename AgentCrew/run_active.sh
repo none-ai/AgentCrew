@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 # AgentCrew 主动执行启动脚本
 
 cd "$(dirname "$0")"

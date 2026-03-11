@@ -101,7 +101,8 @@ class SelfEvolution:
         self.auto_fix = auto_fix
         self.inspector = CodeInspector()
         self.history = EvolutionHistory()
-        self._call_logger = get_logger()
+        # 暂时禁用 call_logger 避免挂起
+        self._call_logger = None
         self.stats = {
             "total_runs": 0,
             "issues_found": 0,
@@ -112,11 +113,12 @@ class SelfEvolution:
     def inspect(self, target_dir: str = None) -> Dict[str, Any]:
         """执行自我巡检"""
         start_time = time.time()
-        call_id = self._call_logger.log_call_start(
-            source="self_evolution",
-            action="inspect",
-            params={"target_dir": target_dir}
-        )
+        if self._call_logger:
+            call_id = self._call_logger.log_call_start(
+                source="self_evolution",
+                action="inspect",
+                params={"target_dir": target_dir}
+            )
         
         logger.info("🔍 开始自我巡检...")
         
@@ -130,12 +132,13 @@ class SelfEvolution:
         report = self.inspector.get_report()
         
         duration_ms = (time.time() - start_time) * 1000
-        self._call_logger.log_call_end(
-            call_id,
-            result={"issues_found": report['stats']['issues_found']},
-            status=CallStatus.SUCCESS,
-            duration_ms=duration_ms
-        )
+        if self._call_logger:
+            self._call_logger.log_call_end(
+                call_id,
+                result={"issues_found": report['stats']['issues_found']},
+                status=CallStatus.SUCCESS,
+                duration_ms=duration_ms
+            )
         
         logger.info(f"📊 巡检完成: 发现 {report['stats']['issues_found']} 个问题")
         
