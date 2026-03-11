@@ -252,12 +252,24 @@ class CallLogger:
         status: CallStatus = CallStatus.SUCCESS,
         duration_ms: float = 0,
         metadata: Optional[Dict[str, Any]] = None,
-        tokens_used: int = 0,
-        tokens_prompt: int = 0,
-        tokens_completion: int = 0,
-        cost_usd: float = 0
+        tokens_used: int = None,
+        tokens_prompt: int = None,
+        tokens_completion: int = None,
+        cost_usd: float = None
     ):
-        """记录调用结束"""
+        """记录调用结束 - 自动计算token"""
+        # 自动计算token（非阻塞）
+        if tokens_used is None and result:
+            # 估算token: 约4字符=1 token
+            text = json.dumps(result)
+            tokens_used = len(text) // 4
+            tokens_prompt = tokens_used // 2
+            tokens_completion = tokens_used // 2
+        
+        # 自动计算费用
+        if cost_usd is None and tokens_used:
+            cost_usd = tokens_used / 1000000 * 0.01
+        
         truncated_result = self._truncate_data(result) if result else {}
         summary = self._generate_summary("", truncated_result, status)
         
