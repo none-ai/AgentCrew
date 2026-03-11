@@ -8,6 +8,7 @@ import sys
 import json
 import time
 import logging
+import sqlite3
 import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -28,7 +29,7 @@ except ImportError:
 
 WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
 LOG_DIR = f"{WORKSPACE}/logs"
-EVOLUTION_LOG = f"{LOG_DIR}/evolution_history.json"
+EVOLUTION_DB = f"{LOG_DIR}/evolution.db"
 
 # 配置日志
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -44,40 +45,111 @@ logger = logging.getLogger(__name__)
 
 
 class EvolutionHistory:
-    """进化历史记录"""
+    """进化历史记录 - SQLite版本"""
     
-    def __init__(self, log_file: str = EVOLUTION_LOG):
-        self.log_file = log_file
-        self.history = self._load_history()
+    def __init__(self, db_path: str = EVOLUTION_DB):
+        self.db_path = db_path
+        self._init_db()
     
-    def _load_history(self) -> List[Dict]:
-        if os.path.exists(self.log_file):
-            try:
-                with open(self.log_file, 'r', encoding='utf-8') as f:
-                    return json.load(f)
-            except:
-                return []
-        return []
+    def _init_db(self):
+        """初始化数据库"""
+        conn = sqlite3.connect(self.db_path)
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS evolution_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cycle_id INTEGER,
+                timestamp TEXT NOT NULL,
+                issues_found INTEGER,
+                issues_fixed INTEGER,
+                duration_ms REAL,
+                details TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        
+        cursor.execute("CREATE INDEX IF NOT EXISTS idx_timestamp ON evolution_history(timestamp)")
+        
+        conn.commit()
+        conn.close()
     
-    def _save_history(self):
-        with open(self.log_file, 'w', encoding='utf-8') as f:
-            json.dump(self.history, f, indent=2, ensure_ascii=False)
+    def _get_connection(self):
+        return sqlite3.connect(self.db_path)
     
     def add_record(self, record: Dict):
-        record["id"] = len(self.history) + 1
-        record["timestamp"] = datetime.now().isoformat()
-        self.history.append(record)
-        self._save_history()
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            INSERT INTO evolution_history 
+            (cycle_id, timestamp, issues_found, issues_fixed, duration_ms, details)
+            VALUES (?, ?, ?, ?, ?, ?)
+        """, (
+            record.get("cycle_id", 0),
+            datetime.now().isoformat(),
+            record.get("issues_found", 0),
+            record.get("issues_fixed", 0),
+            record.get("duration_ms", 0),
+            json.dumps(record.get("details", {}))
+        ))
+        
+        conn.commit()
+        conn.close()
     
     def get_recent(self, days: int = 7) -> List[Dict]:
         """获取最近 N 天的记录"""
-        cutoff = datetime.now() - timedelta(days=days)
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT id, cycle_id, timestamp, issues_found, issues_fixed, duration_ms, details
+            FROM evolution_history
+            WHERE timestamp >= datetime('now', '-' || ? || ' days')
+            ORDER BY timestamp DESC
+        """, (days,))
+        
+        rows = cursor.fetchall()
+        conn.close()
+        
         return [
-            r for r in self.history 
-            if datetime.fromisoformat(r["timestamp"]) > cutoff
+            {
+                "id": row[0],
+                "cycle_id": row[1],
+                "timestamp": row[2],
+                "issues_found": row[3],
+                "issues_fixed": row[4],
+                "duration_ms": row[5],
+                "details": json.loads(row[6]) if row[6] else {}
+            }
+            for row in rows
         ]
     
     def get_summary(self) -> Dict[str, Any]:
+        """获取汇总统计"""
+        conn = self._get_connection()
+        cursor = conn.cursor()
+        
+        cursor.execute("""
+            SELECT 
+                COUNT(*) as total_runs,
+                SUM(issues_found) as total_found,
+                SUM(issues_fixed) as total_fixed,
+                AVG(issues_found) as avg_found,
+                AVG(issues_fixed) as avg_fixed
+            FROM evolution_history
+        """)
+        
+        row = cursor.fetchone()
+        conn.close()
+        
+        return {
+            "total_runs": row[0] or 0,
+            "total_issues_found": row[1] or 0,
+            "total_issues_fixed": row[2] or 0,
+            "avg_issues_found": row[3] or 0,
+            "avg_issues_fixed": row[4] or 0
+        }
         """获取统计摘要"""
         if not self.history:
             return {"total_cycles": 0, "issues_found": 0, "issues_fixed": 0}
@@ -101,8 +173,8 @@ class SelfEvolution:
         self.auto_fix = auto_fix
         self.inspector = CodeInspector()
         self.history = EvolutionHistory()
-        # 暂时禁用 call_logger 避免挂起
-        self._call_logger = None
+        # 重新启用 call_logger
+        self._call_logger = get_logger()
         self.stats = {
             "total_runs": 0,
             "issues_found": 0,
