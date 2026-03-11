@@ -160,7 +160,12 @@ class AutoFixer:
                 category = issue.get("category", "")
                 if category in auto_fixable:
                     if self.try_fix_issue(issue):
-                        pass  # fix applied via function
+                        # 记录已修复的问题
+                        self.fixes_applied.append({
+                            "file": issue.get("file", "unknown"),
+                            "category": category,
+                            "message": issue.get("message", "")[:100]
+                        })
         
         return {
             "dry_run": self.dry_run,
