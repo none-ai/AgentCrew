@@ -205,8 +205,8 @@ class CallLogger:
             
             cursor.execute("""
                 INSERT OR REPLACE INTO calls 
-                (call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))
             """, (
                 record["call_id"],
                 record["timestamp"],
