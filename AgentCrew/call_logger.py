@@ -258,16 +258,14 @@ class CallLogger:
         cost_usd: float = None
     ):
         """记录调用结束 - 自动计算token"""
-        # 自动计算token（非阻塞）
-        if tokens_used is None and result:
-            # 估算token: 约4字符=1 token
-            text = json.dumps(result)
-            tokens_used = len(text) // 4
+        # 自动计算token：使用duration作为估算（约1ms=10 tokens）
+        if tokens_used is None:
+            tokens_used = int(duration_ms * 10) if duration_ms else 0
             tokens_prompt = tokens_used // 2
             tokens_completion = tokens_used // 2
         
         # 自动计算费用
-        if cost_usd is None and tokens_used:
+        if cost_usd is None:
             cost_usd = tokens_used / 1000000 * 0.01
         
         truncated_result = self._truncate_data(result) if result else {}
