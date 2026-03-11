@@ -197,7 +197,7 @@ class AutoFixer:
     
     def apply_fixes(self, issues: List[Dict]) -> Dict[str, Any]:
         """应用自动修复"""
-        auto_fixable = ["quality", "shell"]
+        auto_fixable = ["quality", "shell", "error_handling"]
         
         for issue in issues:
             if issue["severity"] in ["critical", "warning"]:
