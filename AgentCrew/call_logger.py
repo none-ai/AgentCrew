@@ -266,7 +266,9 @@ class CallLogger:
         
         # 自动计算费用
         if cost_usd is None:
-            cost_usd = tokens_used / 1000000 * 0.01
+            cost_usd = tokens_used / 1000000 * 0.01 if tokens_used else 0
+        
+        cost_usd = cost_usd or 0
         
         truncated_result = self._truncate_data(result) if result else {}
         summary = self._generate_summary("", truncated_result, status)
