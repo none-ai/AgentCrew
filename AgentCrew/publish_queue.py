@@ -435,7 +435,6 @@ jobs:
             }
         ]
         
-        import random
         content = random.choice(contents)
         
         task_id = f"collector_{int(time.time())}"
@@ -456,7 +455,6 @@ jobs:
             "Docker", "Kubernetes", "GitHub", "云原生"
         ]
         
-        import random
         topic = random.choice(topics)
         
         date = datetime.now().strftime("%m-%d")
