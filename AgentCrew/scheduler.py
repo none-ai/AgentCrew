@@ -2,16 +2,49 @@
 OpenAgent 任务调度器
 负责任务的自动调度、负载均衡和并行执行
 """
+import os
+import json
 import time
 import threading
 from typing import Dict, List, Optional, Callable
 from datetime import datetime
 from collections import defaultdict
 
+# 配置文件路径
+_config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "worker_config.json")
+
+def _load_worker_config() -> Dict:
+    """加载 worker 配置"""
+    default_config = {
+        "worker": {
+            "max_workers": 8,
+            "min_workers": 2,
+            "task_timeout_seconds": 300,
+            "idle_timeout_seconds": 600,
+            "auto_scale": False
+        }
+    }
+    
+    try:
+        if os.path.exists(_config_path):
+            with open(_config_path, "r") as f:
+                return json.load(f)
+    except Exception:
+        pass
+    
+    return default_config
+
+# 加载配置
+_worker_config = _load_worker_config()
+DEFAULT_MAX_WORKERS = _worker_config.get("worker", {}).get("max_workers", 8)
+
 class TaskScheduler:
     """任务调度器"""
     
-    def __init__(self, max_workers: int = 4):
+    def __init__(self, max_workers: int = None):
+        # 如果未指定，使用配置文件中的默认值
+        if max_workers is None:
+            max_workers = DEFAULT_MAX_WORKERS
         self.max_workers = max_workers
         self.active_workers = 0
         self.task_queue = []
@@ -93,7 +126,7 @@ class ParallelDispatcher:
     
     def __init__(self):
         self.schedulers: Dict[str, TaskScheduler] = {}
-        self.default_scheduler = TaskScheduler()
+        self.default_scheduler = TaskScheduler(max_workers=DEFAULT_MAX_WORKERS)
         self.schedulers["default"] = self.default_scheduler
     
     def create_scheduler(self, name: str, max_workers: int = 4) -> TaskScheduler:

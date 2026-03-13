@@ -1,0 +1,14 @@
+{
+  "worker": {
+    "max_workers": 8,
+    "min_workers": 2,
+    "task_timeout_seconds": 300,
+    "idle_timeout_seconds": 600,
+    "auto_scale": false
+  },
+  "system": {
+    "cpu_cores": 16,
+    "memory_gb": 8,
+    "recommended_workers": 8
+  }
+}

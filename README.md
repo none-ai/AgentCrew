@@ -52,6 +52,8 @@
 | 💿 **State Persistence** | JSON/SQLite/In-memory backends, auto-save, state recovery |
 | 🛡️ **Error Handling** | Agent-level and system-level error recovery mechanisms |
 | 📈 **Extensibility** | Plugin architecture, easily add new agent types |
+| 🔬 **Auto Research** | Automated research with trend analysis and recommendations |
+| 🔄 **Self Iteration** | Automatic code improvement with auto-fix capabilities |
 
 ---
 
@@ -331,6 +333,8 @@ class StateTracker:
 | 💻 Developer | developer | Code implementation, feature development |
 | 🧪 QA Engineer | qa | Test case creation, defect discovery |
 | 📝 Technical Writer | techwriter | Documentation writing |
+| 🔬 Researcher | researcher | Automated research, trend analysis, market insights |
+| 🔄 Optimizer | optimizer | Performance optimization, self-iteration, closed-loop improvement |
 
 ## 🤝 Contributing
 
@@ -380,3 +384,28 @@ If you like this project, please consider sponsoring our development!
 Made with ❤️ by [stlin256](https://github.com/stlin256)
 
 </div>
+
+## 代码巡检报告 (2026-03-13)
+
+### 发现的问题
+
+| 类别 | 数量 | 说明 |
+|------|------|------|
+| import | 3 | 重复导入 |
+| error_handling | 15 | bare except/try-except不匹配 |
+| security | 1 | 疑似硬编码敏感信息 |
+| quality | 28 | 函数过长/print语句过多/行过长 |
+
+### 主要文件问题
+
+- publish_queue.py: 28个print语句，1个安全问题
+- persistence.py: 15个print语句
+- connection_pool.py: try-except不匹配
+- fast_poster.py: 重复导入，bare except
+
+### 建议
+
+1. 清理print语句，使用日志
+2. 修复bare except
+3. 审查敏感信息
+4. 重构长函数

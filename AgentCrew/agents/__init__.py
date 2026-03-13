@@ -37,6 +37,18 @@ AGENT_ROLES = {
         "title": "文档工程师",
         "description": "文档编写",
         "color": "#f39c12"
+    },
+    "researcher": {
+        "name": "Researcher",
+        "title": "研究员",
+        "description": "自动调研、信息收集、趋势分析",
+        "color": "#8e44ad"
+    },
+    "optimizer": {
+        "name": "Optimizer",
+        "title": "优化师",
+        "description": "性能优化、自动迭代、闭环改进",
+        "color": "#16a085"
     }
 }
 

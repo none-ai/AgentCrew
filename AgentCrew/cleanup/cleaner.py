@@ -142,7 +142,8 @@ class BaseCleaner(ABC):
                 
                 # 归档
                 if archive and hasattr(item, "archive"):
-                    archive_file = archive_path / f"{type(item).__name__}_{item.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
+archive_file = \
+                    archive_path / f"{type(item).__name__}_{item.id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.json"
                     if item.archive(str(archive_file)):
                         self.stats["archived"] += 1
                 

@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 
 class ActivePatrol:
     """主动巡检器 - 定期检查项目状态"""
-    
+
     def __init__(self, workspace: str = WORKSPACE):
         self.workspace = workspace
         self.targets = [
@@ -48,7 +48,7 @@ class ActivePatrol:
             f"{workspace}/data"
         ]
         self._call_logger = get_logger()
-    
+
     def check_project_status(self) -> Dict[str, Any]:
         """检查项目整体状态"""
         start_time = time.time()
@@ -57,12 +57,12 @@ class ActivePatrol:
             action="check_project_status",
             params={"workspace": self.workspace}
         )
-        
+
         result = {
             "timestamp": datetime.now().isoformat(),
             "checks": {}
         }
-        
+
         # 检查脚本目录
         scripts_dir = f"{self.workspace}/scripts"
         if os.path.exists(scripts_dir):
@@ -73,7 +73,7 @@ class ActivePatrol:
                 "python": len(py_files),
                 "last_modified": self._get_last_modified(scripts_dir)
             }
-        
+
         # 检查数据目录
         data_dir = f"{self.workspace}/data"
         if os.path.exists(data_dir):
@@ -88,7 +88,7 @@ class ActivePatrol:
                     }
             except Exception as e:
                 result["checks"]["tasks"] = {"error": str(e)}
-        
+
         # 检查日志
         log_dir = f"{self.workspace}/logs"
         if os.path.exists(log_dir):
@@ -97,7 +97,7 @@ class ActivePatrol:
                 "count": len(log_files),
                 "files": log_files[:5]
             }
-        
+
         duration_ms = (time.time() - start_time) * 1000
         self._call_logger.log_call_end(
             call_id,
@@ -105,9 +105,9 @@ class ActivePatrol:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         return result
-    
+
     def check_code_quality(self) -> Dict[str, Any]:
         """检查代码质量"""
         start_time = time.time()
@@ -120,23 +120,23 @@ class ActivePatrol:
             "timestamp": datetime.now().isoformat(),
             "issues": []
         }
-        
+
         # 尝试调用 self_inspector
         try:
             sys.path.insert(0, f"{WORKSPACE}/AgentCrew/AgentCrew")
             from self_inspector import CodeInspector
-            
+
             inspector = CodeInspector()
             for target in self.targets:
                 if os.path.exists(target):
                     inspector.inspect_directory(target)
-            
+
             report = inspector.get_report()
             result["issues"] = report.get("issues", [])
             result["stats"] = report.get("stats", {})
         except Exception as e:
             result["error"] = str(e)
-        
+
         duration_ms = (time.time() - start_time) * 1000
         issues_count = len(result.get("issues", []))
         self._call_logger.log_call_end(
@@ -145,9 +145,9 @@ class ActivePatrol:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         return result
-    
+
     def check_task_queue(self) -> Dict[str, Any]:
         """检查任务队列状态"""
         start_time = time.time()
@@ -160,20 +160,20 @@ class ActivePatrol:
             "timestamp": datetime.now().isoformat(),
             "queue": {}
         }
-        
+
         tasks_file = f"{self.workspace}/data/tasks_source.json"
         if os.path.exists(tasks_file):
             try:
                 with open(tasks_file, "r") as f:
                     tasks = json.load(f)
-                
+
                 # 统计各状态任务
                 states = self._count_states(tasks)
-                
+
                 # 找出待处理的高优先级任务
                 pending = [t for t in tasks if t.get("state") in ["Zhongshu", "Menxia"]]
                 urgent = [t for t in pending if t.get("priority", 0) >= 5]
-                
+
                 result["queue"] = {
                     "total": len(tasks),
                     "pending": len(pending),
@@ -183,7 +183,7 @@ class ActivePatrol:
                 }
             except Exception as e:
                 result["error"] = str(e)
-        
+
         duration_ms = (time.time() - start_time) * 1000
         self._call_logger.log_call_end(
             call_id,
@@ -191,9 +191,9 @@ class ActivePatrol:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         return result
-    
+
     def check_system_resources(self) -> Dict[str, Any]:
         """检查系统资源状态"""
         start_time = time.time()
@@ -206,7 +206,7 @@ class ActivePatrol:
             "timestamp": datetime.now().isoformat(),
             "resources": {}
         }
-        
+
         # 检查磁盘空间
         try:
             stat = os.statvfs(self.workspace)
@@ -214,7 +214,7 @@ class ActivePatrol:
             result["resources"]["disk_free_gb"] = round(free_gb, 2)
         except Exception:
             pass
-        
+
         # 检查内存使用
         try:
             with open("/proc/meminfo", "r") as f:
@@ -226,13 +226,13 @@ class ActivePatrol:
                         break
         except Exception:
             pass
-        
+
         # 检查进程
         try:
             result["resources"]["openclaw_processes"] = self._count_processes("openclaw")
         except Exception:
             pass
-        
+
         duration_ms = (time.time() - start_time) * 1000
         self._call_logger.log_call_end(
             call_id,
@@ -240,9 +240,9 @@ class ActivePatrol:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         return result
-    
+
     def run_full_patrol(self) -> Dict[str, Any]:
         start_time = time.time()
         call_id = self._call_logger.log_call_start(
@@ -252,17 +252,17 @@ class ActivePatrol:
         )
         """运行全面巡检"""
         logger.info("🔍 开始主动巡检...")
-        
+
         result = {
             "timestamp": datetime.now().isoformat(),
             "patrol_id": int(time.time())
         }
-        
+
         result["project_status"] = self.check_project_status()
         result["code_quality"] = self.check_code_quality()
         result["task_queue"] = self.check_task_queue()
         result["system_resources"] = self.check_system_resources()
-        
+
         duration_ms = (time.time() - start_time) * 1000
         self._call_logger.log_call_end(
             call_id,
@@ -270,11 +270,11 @@ class ActivePatrol:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         logger.info("✅ 巡检完成")
-        
+
         return result
-    
+
     def _get_last_modified(self, path: str) -> Optional[str]:
         """获取最后修改时间"""
         try:
@@ -282,7 +282,7 @@ class ActivePatrol:
             return datetime.fromtimestamp(mtime).isoformat()
         except Exception:
             return None
-    
+
     def _count_states(self, tasks: List[Dict]) -> Dict[str, int]:
         """统计任务状态"""
         states = {}
@@ -290,12 +290,12 @@ class ActivePatrol:
             state = task.get("state", "unknown")
             states[state] = states.get(state, 0) + 1
         return states
-    
+
     def _find_stale_tasks(self, tasks: List[Dict], days: int = 3) -> List[Dict]:
         """找出长期未处理的任务"""
         stale = []
         cutoff = datetime.now() - timedelta(days=days)
-        
+
         for task in tasks:
             if task.get("state") in ["Zhongshu", "Menxia", "Assigned"]:
                 updated = task.get("updated")
@@ -311,9 +311,9 @@ class ActivePatrol:
                             })
                     except Exception:
                         pass
-        
+
         return stale[:5]  # 最多返回5个
-    
+
     def _count_processes(self, name: str) -> int:
         """统计进程数"""
         try:
@@ -329,11 +329,11 @@ class ActivePatrol:
 
 class IssueIdentifier:
     """问题识别器 - 根据巡检结果自动判断需要做什么"""
-    
+
     def __init__(self):
         self.rules = self._load_rules()
         self._call_logger = get_logger()
-    
+
     def identify(self, patrol_result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """识别问题并生成行动建议"""
         start_time = time.time()
@@ -342,7 +342,7 @@ class IssueIdentifier:
             action="issue_identify",
             params={"rules_count": len(self.rules)}
         )
-    
+
     def _load_rules(self) -> List[Dict]:
         """加载识别规则"""
         return [
@@ -372,7 +372,7 @@ class IssueIdentifier:
             },
             {
                 "name": "进程异常",
-                "condition": lambda r: r.get("system_resources", {}).get("resources", {}).get("openclaw_processes", 1) == 0,
+"condition": lambda r: r.get("system_resources", {}).get("resources", {}).get("openclaw_processes", 1) == 0,
                 "action": "restart_service",
                 "priority": 5
             },
@@ -383,7 +383,7 @@ class IssueIdentifier:
                 "priority": 3
             }
         ]
-    
+
     def identify(self, patrol_result: Dict[str, Any]) -> List[Dict[str, Any]]:
         """识别问题并决定行动"""
         start_time = time.time()
@@ -392,9 +392,9 @@ class IssueIdentifier:
             action="issue_identify",
             params={"rules_count": len(self.rules)}
         )
-        
+
         issues = []
-        
+
         for rule in self.rules:
             try:
                 if rule["condition"](patrol_result):
@@ -406,10 +406,10 @@ class IssueIdentifier:
                     })
             except Exception as e:
                 logger.warning(f"规则检查失败 {rule['name']}: {e}")
-        
+
         # 按优先级排序
         issues.sort(key=lambda x: x["priority"], reverse=True)
-        
+
         duration_ms = (time.time() - start_time) * 1000
         self._call_logger.log_call_end(
             call_id,
@@ -417,40 +417,43 @@ class IssueIdentifier:
             status=CallStatus.SUCCESS,
             duration_ms=duration_ms
         )
-        
+
         logger.info(f"📋 识别到 {len(issues)} 个需要处理的问题")
-        
+
         return issues
-    
+
     def _extract_details(self, patrol_result: Dict, action: str) -> Dict:
         """提取详细信息"""
         details = {}
-        
+
         if action == "fix_code_issues":
             issues = patrol_result.get("code_quality", {}).get("issues", [])
             details["count"] = len(issues)
-            details["sample"] = issues[:3] if issues else []
-        
+            details["sample"] = issues[:10] if issues else []  # 保留sample用于日志
+            details["all_issues"] = issues  # 修复：传递所有问题
+            details["auto_fixable_count"] = \
+                len([i for i in issues if i.get("category") in ["quality", "shell", "error_handling"]])
+
         elif action == "handle_stale_tasks":
             stale = patrol_result.get("task_queue", {}).get("queue", {}).get("stale_tasks", [])
             details["stale_tasks"] = stale
-        
+
         elif action == "escalate_tasks":
             pending = patrol_result.get("task_queue", {}).get("queue", {}).get("pending", 0)
             details["pending_count"] = pending
-        
+
         return details
 
 
 class AutoExecutor:
     """自动执行器 - 根据预设规则自动执行任务"""
-    
+
     def __init__(self, workspace: str = WORKSPACE):
         self.workspace = workspace
         self.actions = self._register_actions()
         self.execution_log = []
         self._call_logger = get_logger()
-    
+
     def _register_actions(self) -> Dict[str, Callable]:
         """注册可执行的动作"""
         return {
@@ -461,7 +464,7 @@ class AutoExecutor:
             "restart_service": self._restart_service,
             "notify_review": self._notify_review
         }
-    
+
     def execute(self, issue: Dict[str, Any]) -> Dict[str, Any]:
         """执行指定动作"""
         start_time = time.time()
@@ -471,7 +474,7 @@ class AutoExecutor:
             action=f"execute_{action}",
             params={"issue_name": issue.get("name")}
         )
-        
+
         if action not in self.actions:
             self._call_logger.log_call_end(
                 call_id,
@@ -480,9 +483,9 @@ class AutoExecutor:
                 duration_ms=0
             )
             return {"status": "skipped", "reason": f"未知动作: {action}"}
-        
+
         logger.info(f"⚡ 开始执行: {issue.get('name')}")
-        
+
         try:
             result = self.actions[action](issue)
             self.execution_log.append({
@@ -491,7 +494,7 @@ class AutoExecutor:
                 "action": action,
                 "result": result
             })
-            
+
             duration_ms = (time.time() - start_time) * 1000
             self._call_logger.log_call_end(
                 call_id,
@@ -499,7 +502,7 @@ class AutoExecutor:
                 status=CallStatus.SUCCESS,
                 duration_ms=duration_ms
             )
-            
+
             return result
         except Exception as e:
             duration_ms = (time.time() - start_time) * 1000
@@ -511,37 +514,55 @@ class AutoExecutor:
             )
             logger.error(f"❌ 执行失败: {e}")
             return {"status": "error", "error": str(e)}
-    
+
     def _fix_code_issues(self, issue: Dict) -> Dict:
         """修复代码问题"""
         # 调用自我迭代模块
         try:
             sys.path.insert(0, f"{WORKSPACE}/AgentCrew/AgentCrew")
             from self_iteration import AutoFixer
-            
+
             fixer = AutoFixer(dry_run=False)
-            # 获取问题列表
+            # 获取问题列表 - 修复：获取所有问题，不只是 sample
             details = issue.get("details", {})
-            issues = details.get("sample", [])
+            # 优先使用 count 获取完整问题列表
+            issues = details.get("all_issues", [])
+            if not issues:
+                issues = details.get("sample", [])
             
+            # 如果没有获取到问题，尝试从巡检结果重新获取
+            if not issues:
+                from self_inspector import CodeInspector
+                inspector = CodeInspector()
+                for target in [f"{WORKSPACE}/scripts", f"{WORKSPACE}/AgentCrew/AgentCrew"]:
+                    if os.path.exists(target):
+                        inspector.inspect_directory(target)
+                report = inspector.get_report()
+                issues = report.get("issues", [])
+
+            if not issues:
+                return {"status": "skipped", "reason": "没有发现可修复的问题"}
+
             result = fixer.apply_fixes(issues)
-            return {"status": "success", "fixed": len(result.get("fixes_applied", []))}
+            fixed_count = len(result.get("fixes_applied", []))
+            return {"status": "success", "fixed": fixed_count, "details": result}
         except Exception as e:
-            return {"status": "error", "error": str(e)}
-    
+            import traceback
+            return {"status": "error", "error": str(e), "traceback": traceback.format_exc()}
+
     def _handle_stale_tasks(self, issue: Dict) -> Dict:
         """处理长期未处理的任务"""
         stale = issue.get("details", {}).get("stale_tasks", [])
-        
+
         results = []
         for task in stale:
             task_id = task.get("id")
             if task_id:
                 # 发送提醒
                 results.append(self._remind_task(task_id))
-        
+
         return {"status": "success", "reminded": len(results)}
-    
+
     def _remind_task(self, task_id: str) -> Dict:
         """提醒任务"""
         # 更新任务状态，添加提醒标记
@@ -558,20 +579,20 @@ class AutoExecutor:
             return {"task_id": task_id, "reminded": True}
         except Exception as e:
             return {"task_id": task_id, "error": str(e)}
-    
+
     def _escalate_tasks(self, issue: Dict) -> Dict:
         """升级积压任务"""
         # 向尚书省发送提醒
         pending = issue.get("details", {}).get("pending_count", 0)
         logger.warning(f"⚠️ 任务积压: {pending} 个待处理")
-        
+
         return {"status": "notified", "pending_count": pending}
-    
+
     def _cleanup_disk(self, issue: Dict) -> Dict:
         """清理磁盘空间"""
         # 清理日志文件
         cleaned = 0
-        
+
         log_dir = f"{self.workspace}/logs"
         if os.path.exists(log_dir):
             for f in os.listdir(log_dir):
@@ -581,9 +602,9 @@ class AutoExecutor:
                         cleaned += 1
                     except Exception:
                         pass
-        
+
         return {"status": "success", "cleaned_files": cleaned}
-    
+
     def _restart_service(self, issue: Dict) -> Dict:
         """重启服务"""
         # 尝试启动 OpenClaw gateway
@@ -596,26 +617,37 @@ class AutoExecutor:
             return {"status": "success", "action": "gateway_started"}
         except Exception as e:
             return {"status": "error", "error": str(e)}
-    
+
     def _notify_review(self, issue: Dict) -> Dict:
         """通知审核"""
         # 通知门下省有任务待审核
         by_state = issue.get("details", {}).get("by_state", {})
         menxia_count = by_state.get("Menxia", 0)
-        
+
         logger.info(f"📋 门下省有 {menxia_count} 个任务待审核")
-        
+
         return {"status": "notified", "count": menxia_count}
+
+    def execute_action(self, action: str, details: Dict = None) -> Dict:
+        """执行指定动作 (兼容 auto_controller 的调用方式)"""
+        # 构建 issue 格式
+        issue = {
+            "action": action,
+            "details": details or {},
+            "name": action,
+            "priority": 3
+        }
+        return self.execute(issue)
 
 
 class ActiveReporter:
     """主动汇报器 - 完成任务后自动汇报结果"""
-    
+
     def __init__(self, workspace: str = WORKSPACE):
         self.workspace = workspace
         self.report_log = f"{LOG_DIR}/active_execution_reports.json"
         self.reports = self._load_reports()
-    
+
     def _load_reports(self) -> List[Dict]:
         """加载历史报告"""
         if os.path.exists(self.report_log):
@@ -625,99 +657,114 @@ class ActiveReporter:
             except Exception:
                 pass
         return []
-    
+
     def _save_reports(self):
         """保存报告"""
         with open(self.report_log, "w") as f:
             json.dump(self.reports, f, indent=2, ensure_ascii=False)
-    
+
     def report(self, patrol_result: Dict, issues_identified: List, executions: List) -> Dict:
         """生成并汇报结果"""
+        # 统计修复数量 - result 里嵌套了 status
+        fixed_count = 0
+        for e in executions:
+            result = e.get("result", {})
+            if result.get("status") == "success":
+                fixed_count += result.get("fixed", 0)
+        
         report = {
             "timestamp": datetime.now().isoformat(),
             "patrol_id": patrol_result.get("patrol_id"),
             "issues_found": len(issues_identified),
-            "issues_handled": len([e for e in executions if e.get("status") == "success"]),
+            "issues_handled": len([e for e in executions if e.get("result", {}).get("status") == "success"]),
+            "issues_fixed": fixed_count,
             "executions": executions,
             "summary": self._generate_summary(patrol_result, issues_identified, executions)
         }
-        
+
         self.reports.append(report)
         self._save_reports()
-        
+
         # 打印汇报
         self._print_report(report)
-        
+
         return report
-    
+
     def _generate_summary(self, patrol_result: Dict, issues: List, executions: List) -> str:
         """生成摘要"""
         parts = []
-        
+
         if issues:
             parts.append(f"发现 {len(issues)} 个问题")
+
+        # 计算实际修复数量
+        fixed_count = 0
+        for e in executions:
+            result = e.get("result", {})
+            if result.get("status") == "success":
+                fixed_count += result.get("fixed", 0)
         
-        success = sum(1 for e in executions if e.get("status") == "success")
         if executions:
-            parts.append(f"已处理 {success}/{len(executions)} 个")
+            parts.append(f"已修复 {fixed_count} 个")
         
         # 添加关键指标
         task_queue = patrol_result.get("task_queue", {}).get("queue", {})
         if task_queue.get("pending", 0) > 0:
             parts.append(f"待处理任务: {task_queue['pending']}")
-        
+
         return "; ".join(parts) if parts else "一切正常"
-    
+
     def _print_report(self, report: Dict):
         """打印报告"""
         logger.info("=" * 50)
         logger.info(f"📊 主动执行报告 - {report['timestamp']}")
         logger.info(f"   发现问题: {report['issues_found']}")
         logger.info(f"   已处理: {report['issues_handled']}")
+        logger.info(f"   实际修复: {report.get('issues_fixed', 0)}")
         logger.info(f"   摘要: {report['summary']}")
         logger.info("=" * 50)
 
 
 class ActiveExecutor:
     """主动执行器主控制器 - 整合巡检、识别、执行、汇报"""
-    
+
     def __init__(self, workspace: str = WORKSPACE, auto_execute: bool = True):
         self.workspace = workspace
         self.auto_execute = auto_execute
-        
+
         self.patrol = ActivePatrol(workspace)
         self.identifier = IssueIdentifier()
         self.executor = AutoExecutor(workspace)
         self.reporter = ActiveReporter(workspace)
-        
+
         self.stats = {
             "total_runs": 0,
             "issues_identified": 0,
             "issues_fixed": 0
         }
-    
+
     def run_cycle(self) -> Dict:
         """运行一个完整的主动执行周期"""
         self.stats["total_runs"] += 1
-        
+
         cycle_start = datetime.now()
         logger.info(f"🔄 开始主动执行周期 #{self.stats['total_runs']}")
-        
+
         result = {
             "cycle_id": self.stats["total_runs"],
             "start_time": cycle_start.isoformat()
         }
-        
+
         # 1. 主动巡检
         patrol_result = self.patrol.run_full_patrol()
         result["patrol"] = patrol_result
-        
+
         # 2. 识别问题
         issues = self.identifier.identify(patrol_result)
         result["issues_identified"] = len(issues)
         result["issues"] = issues
         self.stats["issues_identified"] += len(issues)
-        
+
         # 3. 自动执行
         executions = []
         if self.auto_execute and issues:
@@ -732,25 +779,25 @@ class ActiveExecutor:
                     })
                     if exec_result.get("status") == "success":
                         self.stats["issues_fixed"] += 1
-        
+
         result["executions"] = executions
-        
+
         # 4. 主动汇报
         report = self.reporter.report(patrol_result, issues, executions)
         result["report"] = report
-        
+
         cycle_end = datetime.now()
         result["end_time"] = cycle_end.isoformat()
         result["duration_seconds"] = (cycle_end - cycle_start).total_seconds()
-        
+
         logger.info(f"✅ 主动执行周期完成: {result['duration_seconds']:.1f}秒")
-        
+
         return result
-    
+
     def run_scheduled(self, interval_minutes: int = 30):
         """定时运行主动执行"""
         logger.info(f"⏰ 启动定时主动执行 (间隔: {interval_minutes} 分钟)")
-        
+
         while True:
             try:
                 self.run_cycle()
@@ -767,17 +814,17 @@ class ActiveExecutor:
 def main():
     """主入口"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="AgentCrew 主动执行器")
     parser.add_argument("--once", "-o", action="store_true", help="仅运行一次")
     parser.add_argument("--schedule", "-s", type=int, help="定时运行(分钟)")
     parser.add_argument("--no-auto", action="store_true", help="仅巡检，不自动执行")
     parser.add_argument("--patrol-only", "-p", action="store_true", help="仅巡检，不识别不执行")
-    
+
     args = parser.parse_args()
-    
+
     executor = ActiveExecutor(auto_execute=not args.no_auto)
-    
+
     if args.patrol_only:
         # 仅巡检
         result = executor.patrol.run_full_patrol()

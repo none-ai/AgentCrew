@@ -1,17 +1,43 @@
 {
-  "interval_seconds": 3600,
-  "auto_fix": false,
+  "interval_seconds": 60,
+  "auto_fix": true,
   "target_dirs": [
+    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew",
     "/home/stlin-claw/.openclaw/workspace-taizi/scripts",
-    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew"
+    "/home/stlin-claw/.openclaw/workspace-taizi/openhome",
+    "/home/stlin-claw/.openclaw/workspace-taizi/openagent",
+    "/home/stlin-claw/.openclaw/workspace-taizi/agent-team",
+    "/home/stlin-claw/.openclaw/workspace-taizi/none-ai-repos",
+    "/home/stlin-claw/.openclaw/workspace-taizi/repos_inspect",
+    "/home/stlin-claw/.openclaw/workspace-taizi/ai-producthuntgetbeel",
+    "/home/stlin-claw/.openclaw/workspace-taizi/ai-techcrunchnintendosu",
+    "/home/stlin-claw/.openclaw/workspace-taizi/ai-techcrunchxistesting",
+    "/home/stlin-claw/.openclaw/workspace-taizi/ci-pipeline",
+    "/home/stlin-claw/.openclaw/workspace-taizi/devflow",
+    "/home/stlin-claw/.openclaw/workspace-taizi/free-domain",
+    "/home/stlin-claw/.openclaw/workspace-taizi/free-domain-web",
+    "/home/stlin-claw/.openclaw/workspace-taizi/getbeel",
+    "/home/stlin-claw/.openclaw/workspace-taizi/inspect-repos",
+    "/home/stlin-claw/.openclaw/workspace-taizi/ltx-desktop",
+    "/home/stlin-claw/.openclaw/workspace-taizi/memory",
+    "/home/stlin-claw/.openclaw/workspace-taizi/nintendo-sues",
+    "/home/stlin-claw/.openclaw/workspace-taizi/research",
+    "/home/stlin-claw/.openclaw/workspace-taizi/research-reports",
+    "/home/stlin-claw/.openclaw/workspace-taizi/simple-monitor",
+    "/home/stlin-claw/.openclaw/workspace-taizi/system-prompts",
+    "/home/stlin-claw/.openclaw/workspace-taizi/web-aggregator",
+    "/home/stlin-claw/.openclaw/workspace-taizi/x-ads"
   ],
   "enabled": true,
   "notification": false,
-  "max_issues_per_cycle": 50,
+  "max_issues_per_cycle": 100,
   "exclude_patterns": [
     "__pycache__",
     "*.pyc",
     ".git",
-    "node_modules"
+    "node_modules",
+    "*.log",
+    "*.json",
+    "*.md"
   ]
 }

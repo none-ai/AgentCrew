@@ -197,12 +197,17 @@ class AutoFixer:
     
     def apply_fixes(self, issues: List[Dict]) -> Dict[str, Any]:
         """应用自动修复"""
+        # 修复：包含 info 级别的问题，不只是 critical/warning
         auto_fixable = ["quality", "shell", "error_handling"]
         
+        # 统计
+        processed = 0
         for issue in issues:
-            if issue["severity"] in ["critical", "warning"]:
+            # 包含 info, warning, critical 三个级别
+            if issue.get("severity") in ["critical", "warning", "info"]:
                 category = issue.get("category", "")
                 if category in auto_fixable:
+                    processed += 1
                     if self.try_fix_issue(issue):
                         # 记录已修复的问题
                         self.fixes_applied.append({
@@ -216,7 +221,7 @@ class AutoFixer:
             "fixes_applied": self.fixes_applied,
             "fixes_failed": self.fixes_failed,
             "total_issues": len(issues),
-            "auto_fixable_attempted": len([i for i in issues if i.get("category") in auto_fixable])
+            "auto_fixable_attempted": processed
         }
 
 
