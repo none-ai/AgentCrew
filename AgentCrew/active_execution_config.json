@@ -4,9 +4,9 @@
   "min_priority": 3,
   "enabled": true,
   "patrol_targets": [
-    "/home/stlin-claw/.openclaw/workspace-taizi/scripts",
-    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew",
-    "/home/stlin-claw/.openclaw/workspace-taizi/data"
+    "scripts",
+    "AgentCrew",
+    "data"
   ],
   "notification": false,
   "rules": [

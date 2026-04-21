@@ -1,200 +1,97 @@
-#!/usr/bin/env python3
 """
-OpenAgent 新功能测试
-测试：任务依赖图、连接池、状态持久化
+Regression tests for AgentCrew infrastructure modules.
 """
-import sys
-import os
 
-# 添加项目根目录到路径
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import shutil
+import tempfile
+from pathlib import Path
 
-from dependency_graph import DependencyGraph, get_dependency_graph
-from connection_pool import ConnectionPool, PoolManager, Connection
-from persistence import StateManager, JSONFileBackend, SQLiteBackend
+from AgentCrew.connection_pool import Connection, ConnectionPool
+from AgentCrew.dependency_graph import DependencyGraph
+from AgentCrew.persistence import JSONFileBackend, SQLiteBackend, StateManager
 
 
-def test_dependency_graph():
-    """测试任务依赖图引擎"""
-    
+def test_dependency_graph_execution_layers():
     graph = DependencyGraph()
-    
-    # 添加任务节点
-    tasks = [
-        ("init", "初始化项目"),
-        ("config", "配置系统"),
-        ("setup-deps", "安装依赖"),
-        ("build", "构建项目"),
-        ("test", "运行测试"),
-        ("deploy", "部署上线")
-    ]
-    
-    for task_id, desc in tasks:
-        graph.add_node(task_id, {"description": desc})
-    
-    # 添加依赖关系
-    dependencies = [
-        ("config", "init"),
-        ("setup-deps", "init"),
-        ("build", "config"),
-        ("build", "setup-deps"),
-        ("test", "build"),
-        ("deploy", "test")
-    ]
-    
-    for task_id, depends_on in dependencies:
-        graph.add_dependency(task_id, depends_on)
-    
-    
-    # 测试拓扑排序
-    try:
-        order = graph.get_topological_order()
-    except ValueError as e:
-    
-    # 测试执行层次
-    try:
-        layers = graph.get_execution_layers()
-        for i, layer in enumerate(layers):
-    except ValueError as e:
-    
-    # 测试循环检测
-    
-    # 更新任务状态
-    graph.update_status("init", "completed")
-    graph.update_status("config", "completed")
-    graph.update_status("setup-deps", "completed")
-    graph.update_status("build", "running")
-    
-    
-    # 测试序列化
-    json_str = graph.to_json()
-    
-    # 反序列化
-    graph2 = DependencyGraph.from_json(json_str)
-    
-    return True
+    for task_id in ["init", "config", "deps", "build", "test", "deploy"]:
+        graph.add_node(task_id)
+
+    graph.add_dependency("config", "init")
+    graph.add_dependency("deps", "init")
+    graph.add_dependency("build", "config")
+    graph.add_dependency("build", "deps")
+    graph.add_dependency("test", "build")
+    graph.add_dependency("deploy", "test")
+
+    assert graph.get_topological_order() == ["init", "config", "deps", "build", "test", "deploy"]
+    layers = graph.get_execution_layers()
+    assert layers[0] == ["init"]
+    assert set(layers[1]) == {"config", "deps"}
+    assert layers[2:] == [["build"], ["test"], ["deploy"]]
 
 
-def test_connection_pool():
-    """测试连接池管理"""
-    
-    # 创建简单的模拟连接
+def test_connection_pool_lifecycle():
     class MockConnection(Connection):
         def __init__(self, conn_id, pool):
             super().__init__(conn_id, pool)
-            self._connected = True
-        
+            self.connected = True
+
         def ping(self):
-            return self._connected
-        
+            return self.connected
+
         def close(self):
-            self._connected = False
-    
-    # 创建连接池
-    pool = ConnectionPool(
-        name="test-pool",
-        min_size=2,
-        max_size=5,
-        max_idle_time=60,
-        factory=lambda: MockConnection(f"conn-{id(object())}", None)
-    )
-    
-    
-    # 启动维护
+            self.connected = False
+
+        def reset(self):
+            self.connected = True
+
+    counter = {"value": 0}
+
+    def factory():
+        counter["value"] += 1
+        return MockConnection(f"conn-{counter['value']}", None)
+
+    pool = ConnectionPool(name="test", min_size=1, max_size=3, factory=factory)
     pool.start_maintenance()
-    
-    # 获取连接
     with pool.get_connection() as conn:
-    
-    
-    # 获取统计
+        assert conn.conn_id.startswith("conn-")
+        assert conn.in_use is True
     stats = pool.get_stats()
-    for k, v in stats.items():
-    
-    # 关闭连接池
     pool.stop_maintenance()
     pool.close_all()
-    return True
+
+    assert stats["total_created"] >= 1
 
 
-def test_persistence():
-    """测试状态持久化"""
-    
-    # 测试JSON后端
-    json_backend = JSONFileBackend("./data/test_json")
-    state_manager = StateManager(json_backend)
-    
-    # 保存状态
-    state_manager.save_state("executor/tasks", [
-        {"id": "task-1", "title": "任务1", "status": "completed"},
-        {"id": "task-2", "title": "任务2", "status": "pending"}
-    ])
-    
-    state_manager.save_state("scheduler/config", {
-        "max_workers": 4,
-        "timeout": 30
-    })
-    
-    # 加载状态
-    tasks = state_manager.load_state("executor/tasks")
-    config = state_manager.load_state("scheduler/config")
-    
-    
-    # 列出所有状态
-    all_keys = state_manager.list_states()
-    
-    # 测试SQLite后端
-    sqlite_backend = SQLiteBackend("./data/test_state.db")
-    state_manager2 = StateManager(sqlite_backend)
-    
-    state_manager2.save_state("system/info", {
-        "version": "1.0.0",
-        "platform": "linux"
-    })
-    
-    info = state_manager2.load_state("system/info")
-    
-    # 清理测试文件
-    import shutil
-    shutil.rmtree("./data/test_json", ignore_errors=True)
+def _make_temp_dir(name: str) -> Path:
+    root = Path.cwd() / "test_artifacts"
+    root.mkdir(parents=True, exist_ok=True)
+    return root
+
+
+def test_json_persistence_backend():
+    temp_dir = _make_temp_dir("json")
+    manager = StateManager(JSONFileBackend(str(temp_dir)))
+    payload = {"status": "completed", "count": 2}
+    key = f"executor/tasks/{next(tempfile._get_candidate_names())}"
+
     try:
-        os.remove("./data/test_state.db")
-    except Exception:
-        pass
-    
-    return True
+        assert manager.save_state(key, payload) is True
+        assert manager.load_state(key) == payload
+        assert manager.list_states("executor")
+    finally:
+        for artifact in temp_dir.glob("*.json"):
+            artifact.unlink(missing_ok=True)
 
 
-def main():
-    """主函数"""
-    
-    results = []
-    
+def test_sqlite_persistence_backend():
+    temp_dir = _make_temp_dir("sqlite")
+    db_path = temp_dir / f"state-{next(tempfile._get_candidate_names())}.db"
+    manager = StateManager(SQLiteBackend(str(db_path)))
+    payload = {"version": "1.0.0", "platform": "test"}
+
     try:
-        results.append(("依赖图引擎", test_dependency_graph()))
-    except Exception as e:
-        results.append(("依赖图引擎", False))
-    
-    try:
-        results.append(("连接池管理", test_connection_pool()))
-    except Exception as e:
-        results.append(("连接池管理", False))
-    
-    try:
-        results.append(("状态持久化", test_persistence()))
-    except Exception as e:
-        results.append(("状态持久化", False))
-    
-    # 总结
-    
-    all_passed = True
-    for name, passed in results:
-        status = "✅ 通过" if passed else "❌ 失败"
-        if not passed:
-            all_passed = False
-    
-    return 0 if all_passed else 1
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+        assert manager.save_state("system/info", payload) is True
+        assert manager.load_state("system/info") == payload
+    finally:
+        db_path.unlink(missing_ok=True)

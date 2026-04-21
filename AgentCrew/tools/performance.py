@@ -10,7 +10,12 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import statistics
 
-DATA_DIR = Path("/home/stlin-claw/.openclaw/workspace-taizi/openagent/AgentCrew/data")
+try:
+    from ..runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+DATA_DIR = get_runtime_paths().data_dir
 
 def load_tasks():
     """加载任务数据"""

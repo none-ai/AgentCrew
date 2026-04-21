@@ -11,10 +11,16 @@ from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Any
 
-WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
-SCRIPTS_DIR = f"{WORKSPACE}/scripts"
-AGENTCREW_DIR = f"{WORKSPACE}/AgentCrew/AgentCrew"
-LOG_DIR = f"{WORKSPACE}/logs"
+try:
+    from .runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+RUNTIME = get_runtime_paths()
+WORKSPACE = str(RUNTIME.workspace)
+SCRIPTS_DIR = str(RUNTIME.project_root / "scripts")
+AGENTCREW_DIR = str(RUNTIME.package_dir)
+LOG_DIR = str(RUNTIME.logs_dir)
 
 
 class CodeInspector:

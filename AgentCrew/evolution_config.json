@@ -2,8 +2,8 @@
   "interval_seconds": 3600,
   "auto_fix": false,
   "target_dirs": [
-    "/home/stlin-claw/.openclaw/workspace-taizi/scripts",
-    "/home/stlin-claw/.openclaw/workspace-taizi/AgentCrew/AgentCrew"
+    "scripts",
+    "AgentCrew"
   ],
   "enabled": true,
   "notification": false,

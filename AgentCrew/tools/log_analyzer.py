@@ -10,7 +10,12 @@ from pathlib import Path
 from datetime import datetime, timedelta
 from collections import Counter, defaultdict
 
-LOG_DIR = Path("/home/stlin-claw/.openclaw/workspace-taizi/logs")
+try:
+    from ..runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+LOG_DIR = get_runtime_paths().logs_dir
 
 def find_log_files():
     """查找日志文件"""
