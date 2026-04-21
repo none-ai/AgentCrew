@@ -168,6 +168,18 @@ AgentCrew 现在不再只面向软件开发角色。每个 agent 都可以挂载
 
 ```bash
 python -m AgentCrew team:matrix
+
+# 把已安装的 skill 或 MCP server 挂到具体 agent 上
+python -m AgentCrew team:attach-skill --team AgentCrew_dev --agent PM-001 --skill planner
+python -m AgentCrew team:attach-mcp --team AgentCrew_dev --agent PM-001 --server docs
+```
+
+现在任务也可以显式携带 goal / workflow，而不是只靠偏开发语义的 task type：
+
+```bash
+python -m AgentCrew task:create "企业客户 onboarding 重构" \
+  --type workflow \
+  --goal "设计一套可复用的企业客户 onboarding 工作流"
 ```
 
 ### 🧠 图记忆
@@ -177,10 +189,12 @@ python -m AgentCrew team:matrix
 ```bash
 python -m AgentCrew graph:add-entity AgentCrew --node-type project
 python -m AgentCrew graph:add-relation AgentCrew OpenClaw integrates_with
+python -m AgentCrew graph:add-alias AgentCrew OpenAgent
+python -m AgentCrew graph:merge-entity AgentCrew "Agent Crew"
 python -m AgentCrew graph:query AgentCrew
 ```
 
-图记忆会和最近对话、长期语义检索一起注入上下文。
+图记忆会和最近对话、长期语义检索一起注入上下文。现在关系还会记录置信度与重复观察次数，实体也支持 alias 解析与 merge，适合长期沉淀更稳定的知识图谱。
 
 ### 🧩 Skill 与 MCP 安装机制
 

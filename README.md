@@ -168,6 +168,18 @@ Use the capability matrix to inspect a team:
 
 ```bash
 python -m AgentCrew team:matrix
+
+# attach an installed skill or MCP server to a concrete agent
+python -m AgentCrew team:attach-skill --team AgentCrew_dev --agent PM-001 --skill planner
+python -m AgentCrew team:attach-mcp --team AgentCrew_dev --agent PM-001 --server docs
+```
+
+Tasks can now carry an explicit goal and workflow instead of only a software-centric task type:
+
+```bash
+python -m AgentCrew task:create "Customer onboarding redesign" \
+  --type workflow \
+  --goal "Design a reusable onboarding workflow for enterprise customers"
 ```
 
 ### 🧠 Graph Memory
@@ -177,10 +189,12 @@ In addition to short-term and long-term semantic memory, AgentCrew now provides 
 ```bash
 python -m AgentCrew graph:add-entity AgentCrew --node-type project
 python -m AgentCrew graph:add-relation AgentCrew OpenClaw integrates_with
+python -m AgentCrew graph:add-alias AgentCrew OpenAgent
+python -m AgentCrew graph:merge-entity AgentCrew "Agent Crew"
 python -m AgentCrew graph:query AgentCrew
 ```
 
-Graph memory is injected into prompt context together with recent conversation and semantic recall.
+Graph memory is injected into prompt context together with recent conversation and semantic recall. Relations now track confidence and repeated observations, and entities support alias resolution / merge operations for a more stable long-term knowledge graph.
 
 ### 🧩 Skill And MCP Installation
 
