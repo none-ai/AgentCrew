@@ -10,6 +10,7 @@ from typing import Any, Dict
 
 from . import get_communication, get_dispatcher, get_executor, load_teams
 from .communication import MessageType
+from .standalone import serve
 
 
 def _print_json(payload: Dict[str, Any]) -> None:
@@ -37,10 +38,19 @@ def cmd_team_status(args):
 
 def cmd_create_task(args):
     executor = get_executor()
+    metadata = json.loads(args.metadata) if args.metadata else {}
+    if args.command:
+        metadata["command"] = json.loads(args.command) if args.command.startswith("[") else args.command
+    if args.cwd:
+        metadata["cwd"] = args.cwd
+    if args.timeout:
+        metadata["timeout"] = args.timeout
+
     task = executor.create_task(
         title=args.title,
         description=args.description or "",
         task_type=args.type or "default",
+        metadata=metadata,
     )
     if args.assign:
         executor.assign_task(task.id, args.assign)
@@ -91,6 +101,10 @@ def cmd_check_inbox(args):
     )
 
 
+def cmd_serve(args):
+    serve(host=args.host, port=args.port)
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="AgentCrew command line interface")
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
@@ -108,6 +122,10 @@ def build_parser() -> argparse.ArgumentParser:
     parser_task.add_argument("--description", "-d", help="Task description")
     parser_task.add_argument("--type", "-t", default="default", help="Task type")
     parser_task.add_argument("--assign", "-a", help="Assignee")
+    parser_task.add_argument("--metadata", help="JSON metadata payload")
+    parser_task.add_argument("--command", help="Command string or JSON array for built-in command execution")
+    parser_task.add_argument("--cwd", help="Working directory for command execution")
+    parser_task.add_argument("--timeout", type=int, help="Command timeout in seconds")
     parser_task.set_defaults(func=cmd_create_task)
 
     parser_tasks = subparsers.add_parser("task:list", help="List tasks")
@@ -134,6 +152,11 @@ def build_parser() -> argparse.ArgumentParser:
     parser_inbox.add_argument("agent", help="Agent id")
     parser_inbox.add_argument("--unread", "-u", action="store_true", help="Only unread")
     parser_inbox.set_defaults(func=cmd_check_inbox)
+
+    parser_serve = subparsers.add_parser("serve", help="Run the standalone HTTP service")
+    parser_serve.add_argument("--host", default="127.0.0.1", help="Bind host")
+    parser_serve.add_argument("--port", type=int, default=8765, help="Bind port")
+    parser_serve.set_defaults(func=cmd_serve)
 
     return parser
 

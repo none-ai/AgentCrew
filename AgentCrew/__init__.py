@@ -14,6 +14,7 @@ from .agents import AgentTeam, load_teams
 from .dependency_graph import DependencyGraph, get_dependency_graph
 from .connection_pool import ConnectionPool, PoolManager, get_pool_manager, create_pool
 from .persistence import StateManager, JSONFileBackend, SQLiteBackend, get_state_manager
+from .standalone import StandaloneAgentCrewApp, create_server, serve
 
 __all__ = [
     # Core
@@ -41,6 +42,9 @@ __all__ = [
     "JSONFileBackend",
     "SQLiteBackend",
     "get_state_manager",
+    "StandaloneAgentCrewApp",
+    "create_server",
+    "serve",
     # Self Evolution
     "CodeInspector",
     "run_inspection",

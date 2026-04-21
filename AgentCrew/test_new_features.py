@@ -23,7 +23,10 @@ def test_dependency_graph_execution_layers():
     graph.add_dependency("test", "build")
     graph.add_dependency("deploy", "test")
 
-    assert graph.get_topological_order() == ["init", "config", "deps", "build", "test", "deploy"]
+    topo = graph.get_topological_order()
+    assert topo[0] == "init"
+    assert set(topo[1:3]) == {"config", "deps"}
+    assert topo[3:] == ["build", "test", "deploy"]
     layers = graph.get_execution_layers()
     assert layers[0] == ["init"]
     assert set(layers[1]) == {"config", "deps"}

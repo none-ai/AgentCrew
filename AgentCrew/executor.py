@@ -78,6 +78,7 @@ class Task:
         task.started_at = data.get("started_at")
         task.completed_at = data.get("completed_at")
         task.metadata = data.get("metadata", {})
+        task.subtasks = [cls.from_dict(item) for item in data.get("subtasks", [])]
         return task
 
 
@@ -88,6 +89,15 @@ class TaskExecutor:
         self.tasks: Dict[str, Task] = {}
         self.task_handlers: Dict[str, Callable] = {}
         self._call_logger = get_logger()
+        self._register_builtin_handlers()
+
+    def _register_builtin_handlers(self):
+        try:
+            from .builtin_handlers import register_builtin_handlers
+        except ImportError:
+            from builtin_handlers import register_builtin_handlers
+
+        register_builtin_handlers(self)
     
     def register_handler(self, task_type: str, handler: Callable):
         """注册任务处理器"""
@@ -276,6 +286,27 @@ class TaskExecutor:
     def get_all_tasks(self) -> List[Dict]:
         """获取所有任务"""
         return [t.to_dict() for t in self.tasks.values()]
+
+    def clear(self):
+        """清空任务状态"""
+        self.tasks.clear()
+
+    def load_tasks(self, tasks: List[Dict]):
+        """从序列化数据恢复任务"""
+        self.clear()
+
+        restored = {
+            item["id"]: Task.from_dict(item)
+            for item in tasks
+        }
+        self.tasks.update(restored)
+
+        for task in self.tasks.values():
+            task.subtasks = []
+
+        for task in self.tasks.values():
+            if task.parent_id and task.parent_id in self.tasks:
+                self.tasks[task.parent_id].subtasks.append(task)
     
     def get_statistics(self) -> Dict:
         """获取统计信息"""
