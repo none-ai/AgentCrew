@@ -242,6 +242,16 @@ def cmd_graph_relation(args):
     )
 
 
+def cmd_graph_alias(args):
+    memory = get_memory_manager()
+    _print_json({"entity_id": memory.add_alias(args.name, args.alias)})
+
+
+def cmd_graph_merge(args):
+    memory = get_memory_manager()
+    _print_json({"entity_id": memory.merge_entities(args.canonical, args.duplicate)})
+
+
 def cmd_serve(args):
     serve(host=args.host, port=args.port)
 
@@ -365,6 +375,16 @@ def build_parser() -> argparse.ArgumentParser:
     parser_graph_relation.add_argument("--weight", type=float, default=1.0, help="Relation weight")
     parser_graph_relation.add_argument("--metadata", help="JSON object metadata")
     parser_graph_relation.set_defaults(func=cmd_graph_relation)
+
+    parser_graph_alias = subparsers.add_parser("graph:add-alias", help="Add an alias to a graph entity")
+    parser_graph_alias.add_argument("name", help="Entity name or node id")
+    parser_graph_alias.add_argument("alias", help="Alias to add")
+    parser_graph_alias.set_defaults(func=cmd_graph_alias)
+
+    parser_graph_merge = subparsers.add_parser("graph:merge-entity", help="Merge two graph entities")
+    parser_graph_merge.add_argument("canonical", help="Canonical entity name or node id")
+    parser_graph_merge.add_argument("duplicate", help="Duplicate entity name or node id")
+    parser_graph_merge.set_defaults(func=cmd_graph_merge)
 
     parser_serve = subparsers.add_parser("serve", help="Run the standalone HTTP service")
     parser_serve.add_argument("--host", default="127.0.0.1", help="Bind host")

@@ -76,6 +76,33 @@ def test_graph_memory_context_generation():
         graph_path.unlink(missing_ok=True)
 
 
+def test_graph_memory_alias_merge_and_observations():
+    graph_path = get_runtime_paths().data_dir / "test_graph_aliases.json"
+    graph = GraphMemory(str(graph_path))
+    graph.clear()
+
+    try:
+        project = graph.add_entity("AgentCrew", node_type="project", aliases=["OpenAgent"])
+        assert graph.resolve_entity("OpenAgent").id == project
+
+        graph.add_relation("AgentCrew", "OpenClaw", "integrates_with", confidence=0.8)
+        relation_id = graph.add_relation("OpenAgent", "OpenClaw", "integrates_with", confidence=0.6)
+        edge = graph.edges[relation_id]
+
+        assert edge.observations == 2
+        assert edge.confidence >= 0.69
+
+        graph.add_entity("Agent Crew", node_type="project")
+        graph.merge_entities("AgentCrew", "Agent Crew")
+        reloaded = GraphMemory(str(graph_path))
+        context = reloaded.get_context("OpenAgent")
+
+        assert any(node["name"] == "AgentCrew" for node in context["nodes"])
+        assert "observations=2" in context["summary"]
+    finally:
+        graph_path.unlink(missing_ok=True)
+
+
 def test_context_manager_includes_graph_memory():
     graph_path = get_runtime_paths().data_dir / "test_graph_context.json"
     graph = GraphMemory(str(graph_path))

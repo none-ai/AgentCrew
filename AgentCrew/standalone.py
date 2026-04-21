@@ -159,6 +159,14 @@ class StandaloneAgentCrewApp:
         )
         return {"relation_id": relation_id}
 
+    def add_graph_alias(self, payload: Dict[str, Any]):
+        entity_id = self.memory.add_alias(payload["name"], payload["alias"])
+        return {"entity_id": entity_id}
+
+    def merge_graph_entities(self, payload: Dict[str, Any]):
+        entity_id = self.memory.merge_entities(payload["canonical"], payload["duplicate"])
+        return {"entity_id": entity_id}
+
     def list_skills(self):
         return self.extensions.skills.list()
 
@@ -335,6 +343,16 @@ class AgentCrewRequestHandler(BaseHTTPRequestHandler):
             if parsed.path == "/memory/graph/relation":
                 relation = app.add_graph_relation(payload)
                 self._send_json(HTTPStatus.CREATED, relation)
+                return
+
+            if parsed.path == "/memory/graph/alias":
+                entity = app.add_graph_alias(payload)
+                self._send_json(HTTPStatus.CREATED, entity)
+                return
+
+            if parsed.path == "/memory/graph/merge":
+                entity = app.merge_graph_entities(payload)
+                self._send_json(HTTPStatus.OK, entity)
                 return
         except KeyError as exc:
             self._send_json(HTTPStatus.NOT_FOUND, {"error": "not_found", "detail": str(exc)})

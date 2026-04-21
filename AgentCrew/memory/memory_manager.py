@@ -272,6 +272,14 @@ class MemoryManager:
     def graph_context(self, query: str, depth: int = 1, limit: int = 8) -> Dict[str, Any]:
         """获取图记忆上下文。"""
         return self.graph.get_context(query, depth=depth, limit=limit)
+
+    def add_alias(self, name: str, alias: str) -> str:
+        """为图记忆实体添加别名。"""
+        return self.graph.add_alias(name, alias)
+
+    def merge_entities(self, canonical: str, duplicate: str) -> str:
+        """合并两个图记忆实体。"""
+        return self.graph.merge_entities(canonical, duplicate)
     
     def add_interaction(
         self,
