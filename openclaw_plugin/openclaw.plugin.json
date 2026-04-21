@@ -1,0 +1,35 @@
+{
+  "id": "agentcrew",
+  "name": "AgentCrew",
+  "description": "Expose AgentCrew standalone orchestration as OpenClaw tools.",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "baseUrl": {
+        "type": "string",
+        "description": "AgentCrew standalone service base URL."
+      },
+      "autoStart": {
+        "type": "boolean",
+        "description": "Start the AgentCrew standalone service when the plugin is activated."
+      },
+      "pythonExecutable": {
+        "type": "string",
+        "description": "Python executable used when autoStart is enabled."
+      },
+      "projectRoot": {
+        "type": "string",
+        "description": "AgentCrew project root used as the working directory for autoStart."
+      },
+      "host": {
+        "type": "string",
+        "description": "Host to bind when autoStart is enabled."
+      },
+      "port": {
+        "type": "integer",
+        "description": "Port to bind when autoStart is enabled."
+      }
+    }
+  }
+}

@@ -124,6 +124,40 @@ comm.send_message(
 )
 ```
 
+### 🖥️ Standalone Service
+
+AgentCrew now ships with a standalone HTTP service and built-in task handlers.
+
+```bash
+# Start the local service
+python -m AgentCrew serve --host 127.0.0.1 --port 8765
+
+# Create a shell-backed task through the CLI
+python -m AgentCrew task:create "Run smoke check" \
+  --type shell \
+  --command '["python","-c","print(123)"]'
+```
+
+The standalone service exposes:
+
+- `GET /health`
+- `GET /teams`
+- `GET /tasks`
+- `POST /tasks`
+- `POST /tasks/{id}/execute`
+- `GET /messages?agent=<agent_id>`
+
+### 🔌 OpenClaw Plugin
+
+The repository now includes a native OpenClaw bridge under [openclaw_plugin](./openclaw_plugin).
+
+```bash
+openclaw plugins install ./openclaw_plugin
+openclaw gateway restart
+```
+
+The plugin talks to the standalone service and can auto-start `python -m AgentCrew serve` when configured.
+
 ### 🔧 Advanced: Custom Agents
 
 ```python

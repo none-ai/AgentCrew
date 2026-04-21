@@ -124,6 +124,40 @@ comm.send_message(
 )
 ```
 
+### 🖥️ 独立运行服务
+
+现在 AgentCrew 自带独立 HTTP 服务和内置任务处理器。
+
+```bash
+# 启动本地服务
+python -m AgentCrew serve --host 127.0.0.1 --port 8765
+
+# 通过 CLI 创建一个 shell 任务
+python -m AgentCrew task:create "运行冒烟检查" \
+  --type shell \
+  --command '["python","-c","print(123)"]'
+```
+
+独立服务提供的主要接口：
+
+- `GET /health`
+- `GET /teams`
+- `GET /tasks`
+- `POST /tasks`
+- `POST /tasks/{id}/execute`
+- `GET /messages?agent=<agent_id>`
+
+### 🔌 OpenClaw 插件
+
+仓库现在包含一个原生 OpenClaw 桥接插件，位于 [openclaw_plugin](./openclaw_plugin)。
+
+```bash
+openclaw plugins install ./openclaw_plugin
+openclaw gateway restart
+```
+
+这个插件会把 OpenClaw 的工具调用转发到 AgentCrew 独立服务，并且在配置开启时自动启动 `python -m AgentCrew serve`。
+
 ### 🔧 高级用法：自定义智能体
 
 ```python

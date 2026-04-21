@@ -10,11 +10,15 @@ from typing import Any, Dict
 
 from . import get_communication, get_dispatcher, get_executor, load_teams
 from .communication import MessageType
-from .standalone import serve
+from .standalone import StandaloneAgentCrewApp, serve
 
 
 def _print_json(payload: Dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _get_app() -> StandaloneAgentCrewApp:
+    return StandaloneAgentCrewApp()
 
 
 def cmd_list_teams(args):
@@ -37,7 +41,6 @@ def cmd_team_status(args):
 
 
 def cmd_create_task(args):
-    executor = get_executor()
     metadata = json.loads(args.metadata) if args.metadata else {}
     if args.command:
         metadata["command"] = json.loads(args.command) if args.command.startswith("[") else args.command
@@ -46,30 +49,32 @@ def cmd_create_task(args):
     if args.timeout:
         metadata["timeout"] = args.timeout
 
-    task = executor.create_task(
-        title=args.title,
-        description=args.description or "",
-        task_type=args.type or "default",
-        metadata=metadata,
+    app = _get_app()
+    task = app.create_task(
+        {
+            "title": args.title,
+            "description": args.description or "",
+            "task_type": args.type or "default",
+            "metadata": metadata,
+            "assignee": args.assign,
+        }
     )
-    if args.assign:
-        executor.assign_task(task.id, args.assign)
-    _print_json(task.to_dict())
+    _print_json(task)
 
 
 def cmd_list_tasks(args):
-    executor = get_executor()
-    _print_json({"tasks": executor.get_all_tasks()})
+    app = _get_app()
+    _print_json({"tasks": app.list_tasks()})
 
 
 def cmd_task_stats(args):
-    executor = get_executor()
-    _print_json(executor.get_statistics())
+    app = _get_app()
+    _print_json(app.executor.get_statistics())
 
 
 def cmd_execute_task(args):
-    executor = get_executor()
-    _print_json(executor.execute_task(args.task_id))
+    app = _get_app()
+    _print_json(app.execute_task(args.task_id))
 
 
 def cmd_dispatcher_status(args):
@@ -78,27 +83,25 @@ def cmd_dispatcher_status(args):
 
 
 def cmd_send_message(args):
-    comm = get_communication()
-    msg_type = MessageType(args.type) if args.type else MessageType.CHAT
-    msg_id = comm.send_message(
-        sender=args.sender,
-        receiver=args.receiver,
-        content=args.content,
-        msg_type=msg_type,
+    app = _get_app()
+    _print_json(
+        app.send_message(
+            {
+                "sender": args.sender,
+                "receiver": args.receiver,
+                "content": args.content,
+                "msg_type": args.type or MessageType.CHAT.value,
+            }
+        )
     )
-    _print_json({"message_id": msg_id})
 
 
 def cmd_check_inbox(args):
-    comm = get_communication()
-    _print_json(
-        {
-            "messages": [
-                message.to_dict()
-                for message in comm.get_inbox(args.agent, unread_only=args.unread)
-            ]
-        }
-    )
+    app = _get_app()
+    messages = app.get_inbox(args.agent)
+    if args.unread:
+        messages = [message for message in messages if not message.get("read")]
+    _print_json({"messages": messages})
 
 
 def cmd_serve(args):

@@ -1,5 +1,6 @@
 import json
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -79,6 +80,51 @@ def test_standalone_service_roundtrip(monkeypatch):
         server.shutdown()
         server.server_close()
         thread.join(timeout=5)
+        if previous_state is None:
+            app.state_file.unlink(missing_ok=True)
+        else:
+            app.state_file.write_text(previous_state, encoding="utf-8")
+
+
+def test_cli_roundtrip_uses_persisted_state():
+    app = StandaloneAgentCrewApp()
+    previous_state = app.state_file.read_text(encoding="utf-8") if app.state_file.exists() else None
+    app.executor.clear()
+    app.communication.message_bus.messages.clear()
+    app.save_state()
+
+    try:
+        created = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "AgentCrew",
+                "task:create",
+                "CLI persisted task",
+                "--type",
+                "shell",
+                "--command",
+                '["python","-c","print(456)"]',
+            ],
+            cwd=Path.cwd(),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        task = json.loads(created.stdout)
+
+        executed = subprocess.run(
+            [sys.executable, "-m", "AgentCrew", "task:execute", task["id"]],
+            cwd=Path.cwd(),
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        result = json.loads(executed.stdout)
+
+        assert result["status"] == "ok"
+        assert result["result"]["command_result"]["stdout"] == "456"
+    finally:
         if previous_state is None:
             app.state_file.unlink(missing_ok=True)
         else:
