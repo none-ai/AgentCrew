@@ -171,6 +171,32 @@ class ExtensionManager:
         self.skills = skill_registry or SkillRegistry()
         self.mcp = mcp_registry or MCPRegistry()
 
+    def resolve_skills(self, names: List[str]) -> List[Dict[str, Any]]:
+        resolved = []
+        for name in names:
+            try:
+                resolved.append(self.skills.get(name))
+            except KeyError:
+                resolved.append({"name": name, "missing": True})
+        return resolved
+
+    def resolve_mcp_servers(self, names: List[str]) -> List[Dict[str, Any]]:
+        resolved = []
+        for name in names:
+            try:
+                resolved.append(self.mcp.get(name))
+            except KeyError:
+                resolved.append({"name": name, "missing": True})
+        return resolved
+
+    def build_agent_bundle(self, agent_profile: Any) -> Dict[str, Any]:
+        profile = agent_profile.to_dict() if hasattr(agent_profile, "to_dict") else dict(agent_profile)
+        return {
+            "agent": profile,
+            "skills": self.resolve_skills(profile.get("skills", [])),
+            "mcp_servers": self.resolve_mcp_servers(profile.get("mcp_servers", [])),
+        }
+
     def stats(self) -> Dict[str, Any]:
         return {
             "skills": len(self.skills.list()),

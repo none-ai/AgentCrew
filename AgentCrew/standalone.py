@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional
 from urllib.parse import parse_qs, urlparse
 
-from .agents import load_teams
+from .agents import load_teams, save_teams
 from .communication import Message, MessageType, get_communication
 from .extensions import ExtensionManager
 from .executor import Task, get_executor
@@ -60,6 +60,16 @@ class StandaloneAgentCrewApp:
             team_id: team.get_capability_matrix()
             for team_id, team in load_teams().items()
         }
+
+    def get_agent_bundle(self, team_id: str, agent_name: str):
+        teams = load_teams()
+        team = teams.get(team_id)
+        if not team:
+            raise KeyError(team_id)
+        agent = team.get_agent(agent_name)
+        if not agent:
+            raise KeyError(agent_name)
+        return self.extensions.build_agent_bundle(agent.profile)
 
     def list_tasks(self):
         return self.executor.get_all_tasks()
@@ -157,6 +167,16 @@ class StandaloneAgentCrewApp:
             return self.extensions.skills.install_from_file(payload["file"], overwrite=payload.get("overwrite", True))
         return self.extensions.skills.install(payload, overwrite=payload.get("overwrite", True))
 
+    def attach_skill(self, team_id: str, agent_name: str, skill_name: str):
+        self.extensions.skills.get(skill_name)
+        teams = load_teams()
+        team = teams.get(team_id)
+        if not team:
+            raise KeyError(team_id)
+        result = team.attach_skill(agent_name, skill_name)
+        save_teams(teams)
+        return result
+
     def list_mcp_servers(self):
         return self.extensions.mcp.list()
 
@@ -164,6 +184,16 @@ class StandaloneAgentCrewApp:
         if payload.get("file"):
             return self.extensions.mcp.install_from_file(payload["file"], overwrite=payload.get("overwrite", True))
         return self.extensions.mcp.install(payload, overwrite=payload.get("overwrite", True))
+
+    def attach_mcp_server(self, team_id: str, agent_name: str, server_name: str):
+        self.extensions.mcp.get(server_name)
+        teams = load_teams()
+        team = teams.get(team_id)
+        if not team:
+            raise KeyError(team_id)
+        result = team.attach_mcp_server(agent_name, server_name)
+        save_teams(teams)
+        return result
 
 
 class AgentCrewRequestHandler(BaseHTTPRequestHandler):
@@ -204,6 +234,10 @@ class AgentCrewRequestHandler(BaseHTTPRequestHandler):
 
         if parsed.path == "/teams/capabilities":
             self._send_json(HTTPStatus.OK, {"teams": app.team_matrix()})
+            return
+
+        if len(parts) == 5 and parts[0] == "teams" and parts[2] == "agents" and parts[4] == "bundle":
+            self._send_json(HTTPStatus.OK, app.get_agent_bundle(parts[1], parts[3]))
             return
 
         if parsed.path == "/tasks":
@@ -278,9 +312,19 @@ class AgentCrewRequestHandler(BaseHTTPRequestHandler):
                 self._send_json(HTTPStatus.CREATED, skill)
                 return
 
+            if len(parts) == 5 and parts[0] == "teams" and parts[2] == "agents" and parts[4] == "skills":
+                result = app.attach_skill(parts[1], parts[3], payload["skill"])
+                self._send_json(HTTPStatus.OK, result)
+                return
+
             if parsed.path == "/mcp/install":
                 server = app.install_mcp_server(payload)
                 self._send_json(HTTPStatus.CREATED, server)
+                return
+
+            if len(parts) == 5 and parts[0] == "teams" and parts[2] == "agents" and parts[4] == "mcp":
+                result = app.attach_mcp_server(parts[1], parts[3], payload["server"])
+                self._send_json(HTTPStatus.OK, result)
                 return
 
             if parsed.path == "/memory/graph/entity":

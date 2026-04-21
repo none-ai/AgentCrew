@@ -226,6 +226,23 @@ def _build_profile(role: str, name: str, config: Optional[Dict[str, Any]] = None
         metadata=dict(config.get("metadata", {})),
     )
 
+
+def _serialize_agent(agent: "Agent") -> Dict[str, Any]:
+    return {
+        "role": agent.role,
+        "name": agent.name,
+        "active": True,
+        "title": agent.profile.title,
+        "description": agent.profile.description,
+        "color": agent.profile.color,
+        "domains": list(agent.profile.domains),
+        "tools": list(agent.profile.tools),
+        "skills": list(agent.profile.skills),
+        "mcp_servers": list(agent.profile.mcp_servers),
+        "capabilities": [capability.to_dict() for capability in agent.profile.capabilities],
+        "metadata": dict(agent.profile.metadata),
+    }
+
 class Agent:
     """代理基类"""
     
@@ -260,6 +277,9 @@ class Agent:
         """绑定 MCP server。"""
         if server_name not in self.profile.mcp_servers:
             self.profile.mcp_servers.append(server_name)
+
+    def to_config(self) -> Dict[str, Any]:
+        return _serialize_agent(self)
 
     def can_handle(self, task_type: str, domain: Optional[str] = None) -> bool:
         """判断 agent 是否能处理任务。"""
@@ -324,6 +344,20 @@ class AgentTeam:
             if agent.can_handle(task_type, domain)
         ]
 
+    def attach_skill(self, agent_name: str, skill_name: str) -> Dict[str, Any]:
+        agent = self.get_agent(agent_name)
+        if not agent:
+            raise KeyError(agent_name)
+        agent.add_skill(skill_name)
+        return agent.get_status()
+
+    def attach_mcp_server(self, agent_name: str, server_name: str) -> Dict[str, Any]:
+        agent = self.get_agent(agent_name)
+        if not agent:
+            raise KeyError(agent_name)
+        agent.add_mcp_server(server_name)
+        return agent.get_status()
+
     def get_capability_matrix(self) -> Dict[str, Any]:
         """返回团队能力矩阵。"""
         return {
@@ -371,28 +405,9 @@ def save_teams(teams: Dict[str, AgentTeam], config_path: Optional[str] = None):
     config_path = config_path or str(get_runtime_paths().data_dir / "agent_teams.json")
     
     for team_id, team in teams.items():
-        if team_id in DEFAULT_TEAMS:
-            continue  # 不保存默认团队
-        
         data["teams"][team_id] = {
             "name": team.name,
-            "members": [
-                {
-                    "role": agent.role,
-                    "name": agent.name,
-                    "active": True,
-                    "title": agent.profile.title,
-                    "description": agent.profile.description,
-                    "color": agent.profile.color,
-                    "domains": agent.profile.domains,
-                    "tools": agent.profile.tools,
-                    "skills": agent.profile.skills,
-                    "mcp_servers": agent.profile.mcp_servers,
-                    "capabilities": [capability.to_dict() for capability in agent.profile.capabilities],
-                    "metadata": agent.profile.metadata,
-                }
-                for agent in team.agents.values()
-            ]
+            "members": [_serialize_agent(agent) for agent in team.agents.values()]
         }
     
     os.makedirs(os.path.dirname(config_path), exist_ok=True)

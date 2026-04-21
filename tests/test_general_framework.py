@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from AgentCrew.agents import AgentTeam
+from AgentCrew.executor import TaskExecutor
 from AgentCrew.memory.context import ContextManager
 from AgentCrew.memory.graph import GraphMemory
 from AgentCrew.memory.long_term import LongTermMemory
@@ -36,6 +37,23 @@ def test_agent_team_capability_matrix_and_matching():
     assert matrix["agents"]["Research-1"]["skills"] == ["literature_review"]
     assert team.match_agents("research")[0].name == "Research-1"
     assert team.match_agents("support", "customer_success")[0].name == "Ops-1"
+
+
+def test_agent_team_attach_extensions():
+    config = {
+        "name": "Attachable Team",
+        "members": [
+            {"role": "researcher", "name": "Research-1", "active": True},
+        ],
+    }
+
+    team = AgentTeam("attachable", config)
+    team.attach_skill("Research-1", "planner")
+    team.attach_mcp_server("Research-1", "docs")
+
+    agent = team.get_agent("Research-1")
+    assert agent.profile.skills == ["planner"]
+    assert agent.profile.mcp_servers == ["docs"]
 
 
 def test_graph_memory_context_generation():
@@ -92,3 +110,30 @@ def test_long_term_memory_supports_importance_filter():
 
     assert any("high importance memory" in item["content"] for item in results)
     assert all(item["metadata"]["importance"] >= 7 for item in results)
+
+
+def test_workflow_handler_includes_goal_and_context():
+    executor = TaskExecutor()
+    task = executor.create_task(
+        title="Prepare market expansion brief",
+        description="Create a non-coding workflow for market analysis",
+        task_type="workflow",
+        metadata={
+            "goal": {
+                "title": "Assess SEA expansion",
+                "domain": "strategy",
+                "success_criteria": ["identify top 3 markets"],
+            },
+            "workflow": [
+                {"id": "research", "title": "Collect market signals", "kind": "research", "capability": "research"},
+                {"id": "analyze", "title": "Compare risks", "kind": "analysis", "capability": "analysis"},
+            ],
+        },
+    )
+
+    result = executor.execute_task(task.id)
+
+    assert result["status"] == "ok"
+    assert result["result"]["goal"]["title"] == "Assess SEA expansion"
+    assert len(result["result"]["workflow"]["steps"]) == 2
+    assert "workflow_summary" in result["result"]

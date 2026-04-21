@@ -8,6 +8,7 @@ import subprocess
 from typing import Any, Dict, Iterable, Optional
 
 from .runtime import get_runtime_paths, resolve_workspace_path
+from .workflows import normalize_workflow, workflow_summary
 
 
 def _command_result(command: Any, cwd: Optional[str], timeout: int) -> Dict[str, Any]:
@@ -44,13 +45,29 @@ def _maybe_run_command(task) -> Optional[Dict[str, Any]]:
 
 
 def _generic_result(task, category: str, deliverables: Iterable[str]) -> Dict[str, Any]:
+    workflow = normalize_workflow(task.metadata.get("workflow"), task)
+    execution_context = task.metadata.get("execution_context") or {}
+    context_summary = {
+        "team_id": execution_context.get("team_id"),
+        "agent": execution_context.get("agent", {}).get("name"),
+        "skills": [item["name"] for item in execution_context.get("skills", [])],
+        "mcp_servers": [item["name"] for item in execution_context.get("mcp_servers", [])],
+        "memory_hits": {
+            "long_term": len(execution_context.get("memory", {}).get("long_term", [])),
+            "graph_nodes": len(execution_context.get("memory", {}).get("graph", {}).get("nodes", [])),
+        },
+    }
     result = _maybe_run_command(task)
     if result is not None:
         return {
             "category": category,
             "mode": "command",
             "summary": f"{task.title} executed via command",
+            "goal": workflow.goal.to_dict(),
+            "workflow": workflow.to_dict(),
+            "workflow_summary": workflow_summary(workflow),
             "deliverables": list(deliverables),
+            "context": context_summary,
             "command_result": result,
         }
 
@@ -59,8 +76,12 @@ def _generic_result(task, category: str, deliverables: Iterable[str]) -> Dict[st
         "mode": "built_in",
         "summary": f"{task.title} completed with the built-in {category} handler",
         "description": task.description,
+        "goal": workflow.goal.to_dict(),
+        "workflow": workflow.to_dict(),
+        "workflow_summary": workflow_summary(workflow),
         "deliverables": list(deliverables),
         "assignee": task.assignee,
+        "context": context_summary,
         "next_steps": [
             "Review the generated output",
             "Attach a project-specific handler for deeper automation",
@@ -88,6 +109,30 @@ def documentation_handler(task):
     return _generic_result(task, "documentation", ["documentation outline", "release notes"])
 
 
+def research_handler(task):
+    return _generic_result(task, "research", ["research brief", "evidence summary"])
+
+
+def analysis_handler(task):
+    return _generic_result(task, "analysis", ["analysis report", "decision support notes"])
+
+
+def operations_handler(task):
+    return _generic_result(task, "operations", ["runbook update", "execution log"])
+
+
+def coordination_handler(task):
+    return _generic_result(task, "coordination", ["workflow plan", "handoff summary"])
+
+
+def workflow_handler(task):
+    return _generic_result(task, "workflow", ["workflow plan", "execution summary"])
+
+
+def goal_handler(task):
+    return _generic_result(task, "goal", ["goal brief", "completion summary"])
+
+
 def shell_handler(task):
     result = _maybe_run_command(task)
     if result is None:
@@ -107,6 +152,12 @@ def get_builtin_handlers():
         "development": development_handler,
         "testing": testing_handler,
         "documentation": documentation_handler,
+        "research": research_handler,
+        "analysis": analysis_handler,
+        "operations": operations_handler,
+        "coordination": coordination_handler,
+        "workflow": workflow_handler,
+        "goal": goal_handler,
         "shell": shell_handler,
         "command": shell_handler,
     }

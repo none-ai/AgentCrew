@@ -10,12 +10,13 @@ __author__ = "AgentCrew Team"
 from .executor import get_executor, Task, TaskStatus, TaskExecutor
 from .scheduler import get_dispatcher, TaskScheduler
 from .communication import get_communication, Message, MessageType
-from .agents import AgentTeam, load_teams
+from .agents import Agent, AgentTeam, load_teams
 from .dependency_graph import DependencyGraph, get_dependency_graph
 from .connection_pool import ConnectionPool, PoolManager, get_pool_manager, create_pool
 from .persistence import StateManager, JSONFileBackend, SQLiteBackend, get_state_manager
 from .extensions import ExtensionManager, MCPRegistry, SkillRegistry
 from .standalone import StandaloneAgentCrewApp, create_server, serve
+from .workflows import Goal, ToolInvocation, WorkflowPlan, WorkflowStep
 
 __all__ = [
     # Core
@@ -28,6 +29,7 @@ __all__ = [
     "get_communication",
     "Message",
     "MessageType",
+    "Agent",
     "AgentTeam",
     "load_teams",
     # Dependency Graph
@@ -49,6 +51,10 @@ __all__ = [
     "StandaloneAgentCrewApp",
     "create_server",
     "serve",
+    "Goal",
+    "ToolInvocation",
+    "WorkflowPlan",
+    "WorkflowStep",
     # Self Evolution
     "CodeInspector",
     "run_inspection",

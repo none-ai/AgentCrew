@@ -9,6 +9,7 @@ import json
 from typing import Any, Dict
 
 from . import get_communication, get_dispatcher, get_executor, load_teams
+from .agents import save_teams
 from .communication import MessageType
 from .extensions import ExtensionManager
 from .memory import get_memory_manager
@@ -17,6 +18,15 @@ from .standalone import StandaloneAgentCrewApp, serve
 
 def _print_json(payload: Dict[str, Any]) -> None:
     print(json.dumps(payload, ensure_ascii=False, indent=2))
+
+
+def _parse_json_or_text(value: str | None) -> Any:
+    if not value:
+        return None
+    stripped = value.strip()
+    if stripped.startswith("{") or stripped.startswith("[") or stripped.startswith('"'):
+        return json.loads(stripped)
+    return stripped
 
 
 def _get_app() -> StandaloneAgentCrewApp:
@@ -51,6 +61,30 @@ def cmd_team_matrix(args):
     _print_json(payload)
 
 
+def cmd_team_attach_skill(args):
+    manager = ExtensionManager()
+    manager.skills.get(args.skill)
+    teams = load_teams()
+    team = teams.get(args.team)
+    if not team:
+        raise SystemExit(f"Team {args.team} not found")
+    payload = team.attach_skill(args.agent, args.skill)
+    save_teams(teams)
+    _print_json(payload)
+
+
+def cmd_team_attach_mcp(args):
+    manager = ExtensionManager()
+    manager.mcp.get(args.server)
+    teams = load_teams()
+    team = teams.get(args.team)
+    if not team:
+        raise SystemExit(f"Team {args.team} not found")
+    payload = team.attach_mcp_server(args.agent, args.server)
+    save_teams(teams)
+    _print_json(payload)
+
+
 def cmd_create_task(args):
     metadata = json.loads(args.metadata) if args.metadata else {}
     if args.command:
@@ -59,6 +93,12 @@ def cmd_create_task(args):
         metadata["cwd"] = args.cwd
     if args.timeout:
         metadata["timeout"] = args.timeout
+    if args.domain:
+        metadata["domain"] = args.domain
+    if args.goal:
+        metadata["goal"] = _parse_json_or_text(args.goal)
+    if args.workflow:
+        metadata["workflow"] = json.loads(args.workflow)
 
     app = _get_app()
     task = app.create_task(
@@ -221,6 +261,18 @@ def build_parser() -> argparse.ArgumentParser:
     parser_matrix = subparsers.add_parser("team:matrix", help="Show team capability matrix")
     parser_matrix.set_defaults(func=cmd_team_matrix)
 
+    parser_attach_skill = subparsers.add_parser("team:attach-skill", help="Attach an installed skill to an agent")
+    parser_attach_skill.add_argument("--team", required=True, help="Team id")
+    parser_attach_skill.add_argument("--agent", required=True, help="Agent name")
+    parser_attach_skill.add_argument("--skill", required=True, help="Installed skill name")
+    parser_attach_skill.set_defaults(func=cmd_team_attach_skill)
+
+    parser_attach_mcp = subparsers.add_parser("team:attach-mcp", help="Attach an installed MCP server to an agent")
+    parser_attach_mcp.add_argument("--team", required=True, help="Team id")
+    parser_attach_mcp.add_argument("--agent", required=True, help="Agent name")
+    parser_attach_mcp.add_argument("--server", required=True, help="Installed MCP server name")
+    parser_attach_mcp.set_defaults(func=cmd_team_attach_mcp)
+
     parser_task = subparsers.add_parser("task:create", help="Create task")
     parser_task.add_argument("title", help="Task title")
     parser_task.add_argument("--description", "-d", help="Task description")
@@ -230,6 +282,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser_task.add_argument("--command", help="Command string or JSON array for built-in command execution")
     parser_task.add_argument("--cwd", help="Working directory for command execution")
     parser_task.add_argument("--timeout", type=int, help="Command timeout in seconds")
+    parser_task.add_argument("--domain", help="Task domain")
+    parser_task.add_argument("--goal", help="Goal text or JSON object")
+    parser_task.add_argument("--workflow", help="JSON array of workflow steps")
     parser_task.set_defaults(func=cmd_create_task)
 
     parser_tasks = subparsers.add_parser("task:list", help="List tasks")
