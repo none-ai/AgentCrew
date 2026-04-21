@@ -9,7 +9,7 @@ import json
 import uuid
 import logging
 from datetime import datetime
-from typing import Dict, List, Optional, Callable
+from typing import Any, Dict, List, Optional, Callable
 from enum import Enum
 
 # 导入 call_logger
@@ -25,6 +25,13 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
+
+
+def _safe_json(value: Any) -> str:
+    try:
+        return json.dumps(value, ensure_ascii=False)
+    except TypeError:
+        return str(value)
 
 class TaskStatus(Enum):
     """任务状态"""
@@ -78,6 +85,7 @@ class Task:
         task.started_at = data.get("started_at")
         task.completed_at = data.get("completed_at")
         task.metadata = data.get("metadata", {})
+        task.subtasks = [cls.from_dict(item) for item in data.get("subtasks", [])]
         return task
 
 
@@ -88,10 +96,68 @@ class TaskExecutor:
         self.tasks: Dict[str, Task] = {}
         self.task_handlers: Dict[str, Callable] = {}
         self._call_logger = get_logger()
+        self._register_builtin_handlers()
+
+    def _register_builtin_handlers(self):
+        try:
+            from .builtin_handlers import register_builtin_handlers
+        except ImportError:
+            from builtin_handlers import register_builtin_handlers
+
+        register_builtin_handlers(self)
     
     def register_handler(self, task_type: str, handler: Callable):
         """注册任务处理器"""
         self.task_handlers[task_type] = handler
+
+    def _build_execution_context(self, task: Task) -> Dict[str, Any]:
+        try:
+            from .agents import load_teams
+            from .extensions import ExtensionManager
+            from .memory import get_memory_manager
+        except ImportError:
+            from agents import load_teams
+            from extensions import ExtensionManager
+            from memory import get_memory_manager
+
+        context: Dict[str, Any] = {
+            "team_id": None,
+            "agent": {},
+            "skills": [],
+            "mcp_servers": [],
+            "memory": {},
+        }
+        teams = load_teams()
+        agent = None
+        for team_id, team in teams.items():
+            candidate = team.get_agent(task.assignee) if task.assignee else None
+            if candidate:
+                context["team_id"] = team_id
+                agent = candidate
+                break
+
+        if agent:
+            extensions = ExtensionManager()
+            bundle = extensions.build_agent_bundle(agent.profile)
+            context["agent"] = bundle["agent"]
+            context["skills"] = bundle["skills"]
+            context["mcp_servers"] = bundle["mcp_servers"]
+
+        query = " ".join(
+            part
+            for part in [
+                task.title,
+                task.description,
+                _safe_json(task.metadata.get("goal")),
+                _safe_json(task.metadata.get("workflow")),
+            ]
+            if part
+        ).strip()
+        if query:
+            memory = get_memory_manager()
+            context["memory"] = memory.get_context(query=query, include_long_term=True, include_graph=True)
+
+        return context
     
     def create_task(self, title: str, description: str = "", 
                     task_type: str = "default", parent_id: str = None,
@@ -209,6 +275,7 @@ class TaskExecutor:
         
         task = self.tasks[task_id]
         task_type = task.metadata.get("task_type", "default")
+        task.metadata["execution_context"] = self._build_execution_context(task)
         
         # 检查是否有对应的处理器
         if task_type in self.task_handlers:
@@ -276,6 +343,27 @@ class TaskExecutor:
     def get_all_tasks(self) -> List[Dict]:
         """获取所有任务"""
         return [t.to_dict() for t in self.tasks.values()]
+
+    def clear(self):
+        """清空任务状态"""
+        self.tasks.clear()
+
+    def load_tasks(self, tasks: List[Dict]):
+        """从序列化数据恢复任务"""
+        self.clear()
+
+        restored = {
+            item["id"]: Task.from_dict(item)
+            for item in tasks
+        }
+        self.tasks.update(restored)
+
+        for task in self.tasks.values():
+            task.subtasks = []
+
+        for task in self.tasks.values():
+            if task.parent_id and task.parent_id in self.tasks:
+                self.tasks[task.parent_id].subtasks.append(task)
     
     def get_statistics(self) -> Dict:
         """获取统计信息"""

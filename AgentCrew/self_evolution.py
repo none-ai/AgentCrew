@@ -27,9 +27,15 @@ except ImportError:
     from self_inspector import CodeInspector, run_inspection
     from self_iteration import AutoFixer, run_auto_fix, suggest_improvements
 
-WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
-LOG_DIR = f"{WORKSPACE}/logs"
-EVOLUTION_DB = f"{WORKSPACE}/data/evolution.db"
+try:
+    from .runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+RUNTIME = get_runtime_paths()
+WORKSPACE = str(RUNTIME.workspace)
+LOG_DIR = str(RUNTIME.logs_dir)
+EVOLUTION_DB = str(RUNTIME.data_dir / "evolution.db")
 
 # 配置日志
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -37,7 +43,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(f'{LOG_DIR}/self_evolution.log'),
+        logging.FileHandler(Path(LOG_DIR) / "self_evolution.log", encoding="utf-8"),
         logging.StreamHandler()
     ]
 )

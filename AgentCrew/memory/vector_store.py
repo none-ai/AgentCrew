@@ -633,6 +633,21 @@ class VectorStore:
         self.backend = get_vector_store(backend, persist_directory)
         self._call_logger = get_logger()
     
+    def _matches_filters(self, item: MemoryItem, filters: Dict[str, Any]) -> bool:
+        for key, expected in filters.items():
+            actual = item.metadata.get(key)
+            if isinstance(expected, dict):
+                if "$gte" in expected and not (actual is not None and actual >= expected["$gte"]):
+                    return False
+                if "$lte" in expected and not (actual is not None and actual <= expected["$lte"]):
+                    return False
+                if "$in" in expected and actual not in expected["$in"]:
+                    return False
+                continue
+            if actual != expected:
+                return False
+        return True
+
     def add_memory(
         self,
         content: str,
@@ -691,7 +706,7 @@ class VectorStore:
         if filters:
             results = [
                 r for r in results
-                if all(r.metadata.get(k) == v for k, v in filters.items())
+                if self._matches_filters(r, filters)
             ]
         
         duration_ms = (time.time() - start_time) * 1000

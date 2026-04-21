@@ -1,0 +1,15 @@
+{
+  "name": "@agentcrew/openclaw-plugin",
+  "version": "0.1.0",
+  "description": "OpenClaw plugin bridge for AgentCrew standalone service",
+  "type": "module",
+  "private": true,
+  "peerDependencies": {
+    "openclaw": "*"
+  },
+  "openclaw": {
+    "extensions": [
+      "./index.js"
+    ]
+  }
+}

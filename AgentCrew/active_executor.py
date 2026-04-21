@@ -20,9 +20,15 @@ try:
 except ImportError:
     from .call_logger import get_logger, CallStatus
 
-WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
-LOG_DIR = f"{WORKSPACE}/logs"
-ACTIVE_EXECUTION_LOG = f"{LOG_DIR}/active_execution.log"
+try:
+    from .runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+RUNTIME = get_runtime_paths()
+WORKSPACE = str(RUNTIME.workspace)
+LOG_DIR = str(RUNTIME.logs_dir)
+ACTIVE_EXECUTION_LOG = str(RUNTIME.logs_dir / "active_execution.log")
 
 # 配置日志
 os.makedirs(LOG_DIR, exist_ok=True)
@@ -30,7 +36,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler(ACTIVE_EXECUTION_LOG),
+        logging.FileHandler(ACTIVE_EXECUTION_LOG, encoding="utf-8"),
         logging.StreamHandler()
     ]
 )
@@ -123,7 +129,7 @@ class ActivePatrol:
 
         # 尝试调用 self_inspector
         try:
-            sys.path.insert(0, f"{WORKSPACE}/AgentCrew/AgentCrew")
+            sys.path.insert(0, str(RUNTIME.package_dir))
             from self_inspector import CodeInspector
 
             inspector = CodeInspector()

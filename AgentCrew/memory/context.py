@@ -9,6 +9,7 @@ from typing import List, Dict, Any, Optional
 
 from .long_term import LongTermMemory
 from .short_term import ShortTermMemory
+from .graph import GraphMemory
 
 logger = logging.getLogger(__name__)
 
@@ -20,10 +21,12 @@ class ContextManager:
         self,
         long_term: Optional[LongTermMemory] = None,
         short_term: Optional[ShortTermMemory] = None,
+        graph_memory: Optional[GraphMemory] = None,
         max_context_tokens: int = 4000
     ):
         self.long_term = long_term or LongTermMemory()
         self.short_term = short_term or ShortTermMemory()
+        self.graph_memory = graph_memory
         self.max_context_tokens = max_context_tokens
     
     def get_context(
@@ -31,8 +34,10 @@ class ContextManager:
         query: Optional[str] = None,
         include_short_term: bool = True,
         include_long_term: bool = True,
+        include_graph: bool = True,
         short_term_messages: int = 10,
-        long_term_memories: int = 5
+        long_term_memories: int = 5,
+        graph_depth: int = 1,
     ) -> Dict[str, Any]:
         """
         获取完整上下文
@@ -52,6 +57,7 @@ class ContextManager:
             "session_info": self.short_term.get_session_info(),
             "short_term": {},
             "long_term": [],
+            "graph": {},
             "combined": []
         }
         
@@ -81,6 +87,9 @@ class ContextManager:
                 memories = memories[:long_term_memories]
             
             context["long_term"] = memories
+
+        if include_graph and self.graph_memory and query:
+            context["graph"] = self.graph_memory.get_context(query, depth=graph_depth)
         
         # 合并上下文
         context["combined"] = self._build_combined_context(context)
@@ -104,6 +113,14 @@ class ContextManager:
                 "content": f"[长期记忆] {memory.get('content', '')}",
                 "source": "long_term",
                 "memory_id": memory.get("id")
+            })
+
+        graph_summary = context.get("graph", {}).get("summary")
+        if graph_summary:
+            combined.append({
+                "role": "system",
+                "content": f"[图记忆]\n{graph_summary}",
+                "source": "graph_memory",
             })
         
         # 添加短期记忆消息
@@ -139,6 +156,12 @@ class ContextManager:
             for memory in memories:
                 importance = memory.get("metadata", {}).get("importance", 5)
                 parts.append(f"- [{importance}/10] {memory.get('content')}")
+
+        if self.graph_memory:
+            graph_context = self.graph_memory.get_context(query)
+            if graph_context.get("summary"):
+                parts.append("\n## 图记忆")
+                parts.append(graph_context["summary"])
         
         # 对话历史
         if include_history:
@@ -172,17 +195,21 @@ class ContextManager:
         # 添加到短期记忆
         self.short_term.add_user_message(user_message)
         self.short_term.add_assistant_message(assistant_message)
+        summary = f"用户问: {user_message}\n助手答: {assistant_message}"
         
         # 提取到长期记忆
         if extract_to_long_term:
-            # 组合为摘要
-            summary = f"用户问: {user_message}\n助手答: {assistant_message}"
-            
             self.long_term.add(
                 content=summary,
                 memory_type="experience",
                 importance=importance,
                 metadata={"source": "interaction"}
+            )
+
+        if self.graph_memory:
+            self.graph_memory.learn_interaction(
+                summary=summary,
+                metadata={"importance": importance, "source": "interaction"}
             )
         
         return True
@@ -227,7 +254,8 @@ class ContextManager:
                 "entities_count": len(self.short_term.entities),
                 "topics_count": len(self.short_term.topics)
             },
-            "long_term": self.long_term.get_stats()
+            "long_term": self.long_term.get_stats(),
+            "graph": self.graph_memory.get_stats() if self.graph_memory else {},
         }
     
     def search_all(self, query: str, top_k: int = 10) -> Dict[str, Any]:
@@ -250,5 +278,6 @@ class ContextManager:
             "query": query,
             "long_term_results": long_term_results,
             "short_term_results": short_term_results[:5],
+            "graph_results": self.graph_memory.query_subgraph(query, limit=top_k) if self.graph_memory else {},
             "total": len(long_term_results) + len(short_term_results)
         }

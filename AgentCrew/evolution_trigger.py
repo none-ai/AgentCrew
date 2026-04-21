@@ -12,12 +12,17 @@ import signal
 from datetime import datetime
 from pathlib import Path
 
-# 配置
-WORKSPACE = "/home/stlin-claw/.openclaw/workspace-taizi"
-AGENTCREW_DIR = f"{WORKSPACE}/AgentCrew/AgentCrew"
-LOG_DIR = f"{WORKSPACE}/logs"
-PID_FILE = "/tmp/agentcrew_evolution.pid"
-LOG_FILE = f"{LOG_DIR}/evolution_trigger.log"
+try:
+    from .runtime import get_runtime_paths, load_json_config, resolve_workspace_path
+except ImportError:
+    from runtime import get_runtime_paths, load_json_config, resolve_workspace_path
+
+RUNTIME = get_runtime_paths()
+WORKSPACE = str(RUNTIME.workspace)
+AGENTCREW_DIR = str(RUNTIME.package_dir)
+LOG_DIR = str(RUNTIME.logs_dir)
+PID_FILE = str(RUNTIME.tmp_dir / "agentcrew_evolution.pid")
+LOG_FILE = str(RUNTIME.logs_dir / "evolution_trigger.log")
 
 # 进化间隔 (秒)
 DEFAULT_INTERVAL = 3600  # 1小时
@@ -36,7 +41,6 @@ def log(msg: str):
 
 def load_config() -> dict:
     """加载配置"""
-    config_file = f"{AGENTCREW_DIR}/evolution_config.json"
     default_config = {
         "interval_seconds": DEFAULT_INTERVAL,
         "auto_fix": False,
@@ -47,22 +51,18 @@ def load_config() -> dict:
         "enabled": True,
         "notification": False
     }
-    
-    if os.path.exists(config_file):
-        try:
-            with open(config_file, 'r') as f:
-                config = json.load(f)
-                return {**default_config, **config}
-        except Exception:
-            pass
-    
-    return default_config
+    config = load_json_config("evolution_config.json", default_config, WORKSPACE)
+    config["target_dirs"] = [
+        str(resolve_workspace_path(target, WORKSPACE))
+        for target in config.get("target_dirs", [])
+    ]
+    return config
 
 
 def save_config(config: dict):
     """保存配置"""
-    config_file = f"{AGENTCREW_DIR}/evolution_config.json"
-    with open(config_file, 'w') as f:
+    config_file = Path(AGENTCREW_DIR) / "evolution_config.json"
+    with open(config_file, 'w', encoding="utf-8") as f:
         json.dump(config, f, indent=2)
 
 

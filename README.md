@@ -47,6 +47,8 @@
 | 📊 **Status Tracking** | Deep integration with Kanban system, real-time task status monitoring |
 | 💬 **Message Communication** | Inter-agent message passing, event notifications, pub/sub pattern |
 | 🎯 **Workflow Orchestration** | Flexible workflow definition, support for conditional branches and loops |
+| 🧠 **Hybrid Memory** | Short-term conversation memory, long-term semantic memory, and graph memory |
+| 🧩 **Skill/MCP Registry** | Install reusable skills and MCP server manifests into the runtime home |
 | 🔀 **Task Dependency Graph** | DAG task dependency management, topological sorting, cycle detection |
 | 🔗 **Connection Pool** | HTTP/Database/WebSocket connection pool, auto-maintenance, health checks |
 | 💿 **State Persistence** | JSON/SQLite/In-memory backends, auto-save, state recovery |
@@ -125,6 +127,98 @@ comm.send_message(
     msg_type=MessageType.NOTIFICATION
 )
 ```
+
+### 🖥️ Standalone Service
+
+AgentCrew now ships with a standalone HTTP service and built-in task handlers.
+
+```bash
+# Start the local service
+python -m AgentCrew serve --host 127.0.0.1 --port 8765
+
+# Create a shell-backed task through the CLI
+python -m AgentCrew task:create "Run smoke check" \
+  --type shell \
+  --command '["python","-c","print(123)"]'
+```
+
+The standalone service exposes:
+
+- `GET /health`
+- `GET /teams`
+- `GET /tasks`
+- `POST /tasks`
+- `POST /tasks/{id}/execute`
+- `GET /messages?agent=<agent_id>`
+- `GET /teams/capabilities`
+- `GET /memory/graph?query=<term>`
+- `GET /skills`
+- `POST /skills/install`
+- `GET /mcp/servers`
+- `POST /mcp/install`
+
+### 🌐 General Agent Framework
+
+AgentCrew is no longer limited to software delivery roles. Agents now carry:
+
+- capability profiles
+- domain tags
+- attached skills
+- attached MCP servers
+
+Use the capability matrix to inspect a team:
+
+```bash
+python -m AgentCrew team:matrix
+
+# attach an installed skill or MCP server to a concrete agent
+python -m AgentCrew team:attach-skill --team AgentCrew_dev --agent PM-001 --skill planner
+python -m AgentCrew team:attach-mcp --team AgentCrew_dev --agent PM-001 --server docs
+```
+
+Tasks can now carry an explicit goal and workflow instead of only a software-centric task type:
+
+```bash
+python -m AgentCrew task:create "Customer onboarding redesign" \
+  --type workflow \
+  --goal "Design a reusable onboarding workflow for enterprise customers"
+```
+
+### 🧠 Graph Memory
+
+In addition to short-term and long-term semantic memory, AgentCrew now provides graph memory for entity and relation tracking.
+
+```bash
+python -m AgentCrew graph:add-entity AgentCrew --node-type project
+python -m AgentCrew graph:add-relation AgentCrew OpenClaw integrates_with
+python -m AgentCrew graph:add-alias AgentCrew OpenAgent
+python -m AgentCrew graph:merge-entity AgentCrew "Agent Crew"
+python -m AgentCrew graph:query AgentCrew
+```
+
+Graph memory is injected into prompt context together with recent conversation and semantic recall. Relations now track confidence and repeated observations, and entities support alias resolution / merge operations for a more stable long-term knowledge graph.
+
+### 🧩 Skill And MCP Installation
+
+Install runtime skills and MCP server manifests directly into AgentCrew:
+
+```bash
+python -m AgentCrew skill:install --name planner --prompt "You are a planning skill."
+python -m AgentCrew mcp:install --name docs --command python --args '["-m","docs_server"]'
+python -m AgentCrew skill:list
+python -m AgentCrew mcp:list
+```
+
+### 🔌 OpenClaw Plugin
+
+The repository now includes a native OpenClaw bridge under [openclaw_plugin](./openclaw_plugin).
+
+```bash
+openclaw plugins install ./openclaw_plugin
+openclaw gateway restart
+```
+
+The plugin talks to the standalone service and can auto-start `python -m AgentCrew serve` when configured.
 
 ### 🔧 Advanced: Custom Agents
 

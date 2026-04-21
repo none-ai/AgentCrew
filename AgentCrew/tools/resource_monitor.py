@@ -10,7 +10,12 @@ import time
 from pathlib import Path
 from datetime import datetime
 
-DATA_DIR = Path("/home/stlin-claw/.openclaw/workspace-taizi/openagent/AgentCrew/data")
+try:
+    from ..runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
+DATA_DIR = get_runtime_paths().data_dir
 
 def get_cpu_usage():
     """获取CPU使用率"""

@@ -12,6 +12,11 @@ from pathlib import Path
 from typing import Dict, Any, Optional, List, Callable
 from enum import Enum
 
+try:
+    from .runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
+
 
 class CallStatus(Enum):
     """调用状态"""
@@ -39,10 +44,9 @@ class CallLogger:
             return
         self._initialized = True
         
-        # 默认路径为 workspace-taizi 下的 data 目录
         if db_path is None:
-            db_path = "/home/stlin-claw/.openclaw/workspace-taizi/data/call_logs/calls.db"
-        
+            db_path = get_runtime_paths().call_logs_dir / "calls.db"
+
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         
@@ -206,7 +210,7 @@ class CallLogger:
             cursor.execute("""
                 INSERT OR REPLACE INTO calls 
                 (call_id, timestamp, source, action, params, result, status, duration_ms, summary, metadata, tokens_used, tokens_prompt, tokens_completion, cost_usd, created_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))
             """, (
                 record["call_id"],
                 record["timestamp"],

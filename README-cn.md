@@ -47,6 +47,8 @@
 | 📊 **状态追踪** | 深度集成看板系统，实时任务状态监控 |
 | 💬 **消息通信** | 智能体间消息传递、事件通知、发布/订阅模式 |
 | 🎯 **工作流编排** | 灵活的工作流定义，支持条件分支和循环 |
+| 🧠 **混合记忆** | 短期会话记忆、长期语义记忆、图记忆三层协同 |
+| 🧩 **Skill/MCP 注册中心** | 运行时安装和管理可复用 skill 与 MCP server 清单 |
 | 🔀 **任务依赖图** | DAG任务依赖管理、拓扑排序、循环检测 |
 | 🔗 **连接池** | HTTP/数据库/WebSocket连接池、自动维护、健康检查 |
 | 💿 **状态持久化** | JSON/SQLite/内存后端、自动保存、状态恢复 |
@@ -123,6 +125,98 @@ comm.send_message(
     msg_type=MessageType.NOTIFICATION
 )
 ```
+
+### 🖥️ 独立运行服务
+
+现在 AgentCrew 自带独立 HTTP 服务和内置任务处理器。
+
+```bash
+# 启动本地服务
+python -m AgentCrew serve --host 127.0.0.1 --port 8765
+
+# 通过 CLI 创建一个 shell 任务
+python -m AgentCrew task:create "运行冒烟检查" \
+  --type shell \
+  --command '["python","-c","print(123)"]'
+```
+
+独立服务提供的主要接口：
+
+- `GET /health`
+- `GET /teams`
+- `GET /tasks`
+- `POST /tasks`
+- `POST /tasks/{id}/execute`
+- `GET /messages?agent=<agent_id>`
+- `GET /teams/capabilities`
+- `GET /memory/graph?query=<term>`
+- `GET /skills`
+- `POST /skills/install`
+- `GET /mcp/servers`
+- `POST /mcp/install`
+
+### 🌐 通用 Agent 框架
+
+AgentCrew 现在不再只面向软件开发角色。每个 agent 都可以挂载：
+
+- 能力画像
+- 领域标签
+- skills
+- MCP servers
+
+你可以用能力矩阵查看团队结构：
+
+```bash
+python -m AgentCrew team:matrix
+
+# 把已安装的 skill 或 MCP server 挂到具体 agent 上
+python -m AgentCrew team:attach-skill --team AgentCrew_dev --agent PM-001 --skill planner
+python -m AgentCrew team:attach-mcp --team AgentCrew_dev --agent PM-001 --server docs
+```
+
+现在任务也可以显式携带 goal / workflow，而不是只靠偏开发语义的 task type：
+
+```bash
+python -m AgentCrew task:create "企业客户 onboarding 重构" \
+  --type workflow \
+  --goal "设计一套可复用的企业客户 onboarding 工作流"
+```
+
+### 🧠 图记忆
+
+除了短期记忆和长期语义记忆之外，AgentCrew 现在还提供实体/关系图记忆。
+
+```bash
+python -m AgentCrew graph:add-entity AgentCrew --node-type project
+python -m AgentCrew graph:add-relation AgentCrew OpenClaw integrates_with
+python -m AgentCrew graph:add-alias AgentCrew OpenAgent
+python -m AgentCrew graph:merge-entity AgentCrew "Agent Crew"
+python -m AgentCrew graph:query AgentCrew
+```
+
+图记忆会和最近对话、长期语义检索一起注入上下文。现在关系还会记录置信度与重复观察次数，实体也支持 alias 解析与 merge，适合长期沉淀更稳定的知识图谱。
+
+### 🧩 Skill 与 MCP 安装机制
+
+可以直接在 AgentCrew 运行时里安装 skill 与 MCP server 清单：
+
+```bash
+python -m AgentCrew skill:install --name planner --prompt "You are a planning skill."
+python -m AgentCrew mcp:install --name docs --command python --args '["-m","docs_server"]'
+python -m AgentCrew skill:list
+python -m AgentCrew mcp:list
+```
+
+### 🔌 OpenClaw 插件
+
+仓库现在包含一个原生 OpenClaw 桥接插件，位于 [openclaw_plugin](./openclaw_plugin)。
+
+```bash
+openclaw plugins install ./openclaw_plugin
+openclaw gateway restart
+```
+
+这个插件会把 OpenClaw 的工具调用转发到 AgentCrew 独立服务，并且在配置开启时自动启动 `python -m AgentCrew serve`。
 
 ### 🔧 高级用法：自定义智能体
 

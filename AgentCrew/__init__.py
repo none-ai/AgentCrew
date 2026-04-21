@@ -1,30 +1,22 @@
 """
-OpenAgent - Multi-Agent Collaboration Framework
-
-A powerful framework for building intelligent agent teams with:
-- Task decomposition and parallel execution
-- Role-based agent collaboration (PM, Architect, Developer, QA, TechWriter)
-- Real-time progress tracking
-- Message-based communication between agents
-- Task dependency graph engine
-- Connection pool management
-- State persistence
+AgentCrew - Multi-Agent Collaboration Framework.
 """
 
+from importlib import import_module
+
 __version__ = "0.1.0"
-__author__ = "OpenAgent Team"
+__author__ = "AgentCrew Team"
 
 from .executor import get_executor, Task, TaskStatus, TaskExecutor
 from .scheduler import get_dispatcher, TaskScheduler
 from .communication import get_communication, Message, MessageType
-from .agents import AgentTeam, load_teams
+from .agents import Agent, AgentTeam, load_teams
 from .dependency_graph import DependencyGraph, get_dependency_graph
 from .connection_pool import ConnectionPool, PoolManager, get_pool_manager, create_pool
 from .persistence import StateManager, JSONFileBackend, SQLiteBackend, get_state_manager
-
-from .self_inspector import CodeInspector, run_inspection
-from .self_iteration import AutoFixer, run_auto_fix
-from .self_evolution import SelfEvolution, EvolutionHistory
+from .extensions import ExtensionManager, MCPRegistry, SkillRegistry
+from .standalone import StandaloneAgentCrewApp, create_server, serve
+from .workflows import Goal, ToolInvocation, WorkflowPlan, WorkflowStep
 
 __all__ = [
     # Core
@@ -37,6 +29,7 @@ __all__ = [
     "get_communication",
     "Message",
     "MessageType",
+    "Agent",
     "AgentTeam",
     "load_teams",
     # Dependency Graph
@@ -52,6 +45,16 @@ __all__ = [
     "JSONFileBackend",
     "SQLiteBackend",
     "get_state_manager",
+    "SkillRegistry",
+    "MCPRegistry",
+    "ExtensionManager",
+    "StandaloneAgentCrewApp",
+    "create_server",
+    "serve",
+    "Goal",
+    "ToolInvocation",
+    "WorkflowPlan",
+    "WorkflowStep",
     # Self Evolution
     "CodeInspector",
     "run_inspection",
@@ -60,3 +63,23 @@ __all__ = [
     "SelfEvolution",
     "EvolutionHistory",
 ]
+
+_LAZY_IMPORTS = {
+    "CodeInspector": ("AgentCrew.self_inspector", "CodeInspector"),
+    "run_inspection": ("AgentCrew.self_inspector", "run_inspection"),
+    "AutoFixer": ("AgentCrew.self_iteration", "AutoFixer"),
+    "run_auto_fix": ("AgentCrew.self_iteration", "run_auto_fix"),
+    "SelfEvolution": ("AgentCrew.self_evolution", "SelfEvolution"),
+    "EvolutionHistory": ("AgentCrew.self_evolution", "EvolutionHistory"),
+}
+
+
+def __getattr__(name):
+    if name not in _LAZY_IMPORTS:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+    module_name, attribute = _LAZY_IMPORTS[name]
+    module = import_module(module_name)
+    value = getattr(module, attribute)
+    globals()[name] = value
+    return value
