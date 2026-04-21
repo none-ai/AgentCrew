@@ -17,11 +17,16 @@ try:
     from call_logger import get_logger, CallStatus
 except ImportError:
     from ..call_logger import get_logger, CallStatus
+try:
+    from ..runtime import get_runtime_paths
+except ImportError:
+    from runtime import get_runtime_paths
 
 from .vector_store import VectorStore
 from .long_term import LongTermMemory
 from .short_term import ShortTermMemory
 from .context import ContextManager
+from .graph import GraphMemory
 
 logger = logging.getLogger(__name__)
 
@@ -48,12 +53,17 @@ class MemoryManager:
             vector_store=vector_store,
             storage_path=str(self.data_dir / "memory" / "long_term")
         )
+
+        self.graph = GraphMemory(
+            storage_path=str(self.data_dir / "memory" / "graph.json")
+        )
         
         self.short_term = ShortTermMemory()
         
         self.context = ContextManager(
             long_term=self.long_term,
-            short_term=self.short_term
+            short_term=self.short_term,
+            graph_memory=self.graph,
         )
         
         # 加载会话状态
@@ -72,10 +82,12 @@ class MemoryManager:
                     data = json.load(f)
                 
                 self.short_term = ShortTermMemory.from_dict(data.get("short_term", {}))
+                self.context.short_term = self.short_term
                 logger.info(f"加载了会话: {self.short_term.session_id}")
             except Exception as e:
                 logger.warning(f"加载会话失败: {e}")
                 self.short_term = ShortTermMemory()
+                self.context.short_term = self.short_term
     
     def _save_session(self):
         """保存会话状态"""
@@ -222,17 +234,44 @@ class MemoryManager:
     def get_context(
         self,
         query: Optional[str] = None,
-        include_long_term: bool = True
+        include_long_term: bool = True,
+        include_graph: bool = True,
     ) -> Dict[str, Any]:
         """获取上下文"""
         return self.context.get_context(
             query=query,
-            include_long_term=include_long_term
+            include_long_term=include_long_term,
+            include_graph=include_graph,
         )
     
     def get_prompt_context(self, query: str) -> str:
         """获取提示词上下文"""
         return self.context.get_prompt_context(query)
+
+    def add_entity(
+        self,
+        name: str,
+        node_type: str = "concept",
+        aliases: Optional[List[str]] = None,
+        attributes: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """添加图记忆实体。"""
+        return self.graph.add_entity(name, node_type=node_type, aliases=aliases, attributes=attributes)
+
+    def link_entities(
+        self,
+        source: str,
+        target: str,
+        relation: str,
+        weight: float = 1.0,
+        metadata: Optional[Dict[str, Any]] = None,
+    ) -> str:
+        """添加图记忆关系。"""
+        return self.graph.add_relation(source, target, relation, weight=weight, metadata=metadata)
+
+    def graph_context(self, query: str, depth: int = 1, limit: int = 8) -> Dict[str, Any]:
+        """获取图记忆上下文。"""
+        return self.graph.get_context(query, depth=depth, limit=limit)
     
     def add_interaction(
         self,
@@ -256,6 +295,7 @@ class MemoryManager:
         """开始新会话"""
         self.context.clear_session(consolidate=True)
         self.short_term.start_new_session(session_id)
+        self.context.short_term = self.short_term
         self._save_session()
     
     def end_session(self):
@@ -275,6 +315,7 @@ class MemoryManager:
                 "topics": self.short_term.get_topics()
             },
             "long_term": self.long_term.get_stats(),
+            "graph": self.graph.get_stats(),
             "vector_store": self.long_term.vector_store.get_stats()
         }
     
@@ -306,6 +347,7 @@ class MemoryManager:
         """清空所有记忆"""
         if not keep_session:
             self.long_term.clear()
+            self.graph.clear()
         
         self.short_term.clear()
         self._save_session()
@@ -322,11 +364,12 @@ _memory_manager: Optional[MemoryManager] = None
 
 
 def get_memory_manager(
-    data_dir: str = "./data",
+    data_dir: Optional[str] = None,
     vector_backend: str = "chroma"
 ) -> MemoryManager:
     """获取全局记忆管理器"""
     global _memory_manager
     if _memory_manager is None:
+        data_dir = data_dir or str(get_runtime_paths().data_dir)
         _memory_manager = MemoryManager(data_dir, vector_backend)
     return _memory_manager

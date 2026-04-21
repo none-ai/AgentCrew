@@ -10,6 +10,8 @@ from typing import Any, Dict
 
 from . import get_communication, get_dispatcher, get_executor, load_teams
 from .communication import MessageType
+from .extensions import ExtensionManager
+from .memory import get_memory_manager
 from .standalone import StandaloneAgentCrewApp, serve
 
 
@@ -38,6 +40,15 @@ def cmd_team_status(args):
     if not team:
         raise SystemExit(f"Team {args.team} not found")
     _print_json(team.get_status())
+
+
+def cmd_team_matrix(args):
+    teams = load_teams()
+    payload = {
+        team_id: team.get_capability_matrix()
+        for team_id, team in teams.items()
+    }
+    _print_json(payload)
 
 
 def cmd_create_task(args):
@@ -104,6 +115,93 @@ def cmd_check_inbox(args):
     _print_json({"messages": messages})
 
 
+def cmd_skill_list(args):
+    manager = ExtensionManager()
+    _print_json({"skills": manager.skills.list()})
+
+
+def cmd_skill_install(args):
+    manager = ExtensionManager()
+    if args.file:
+        result = manager.skills.install_from_file(args.file, overwrite=not args.no_overwrite)
+    else:
+        result = manager.skills.install(
+            {
+                "name": args.name,
+                "version": args.version,
+                "description": args.description or "",
+                "entry_prompt": args.prompt or "",
+                "tools": json.loads(args.tools) if args.tools else [],
+                "tags": json.loads(args.tags) if args.tags else [],
+                "metadata": json.loads(args.metadata) if args.metadata else {},
+            },
+            overwrite=not args.no_overwrite,
+        )
+    _print_json(result)
+
+
+def cmd_mcp_list(args):
+    manager = ExtensionManager()
+    _print_json({"servers": manager.mcp.list()})
+
+
+def cmd_mcp_install(args):
+    manager = ExtensionManager()
+    if args.file:
+        result = manager.mcp.install_from_file(args.file, overwrite=not args.no_overwrite)
+    else:
+        result = manager.mcp.install(
+            {
+                "name": args.name,
+                "version": args.version,
+                "description": args.description or "",
+                "transport": args.transport,
+                "command": args.command or "",
+                "args": json.loads(args.args) if args.args else [],
+                "env": json.loads(args.env) if args.env else {},
+                "cwd": args.cwd,
+                "capabilities": json.loads(args.capabilities) if args.capabilities else [],
+                "metadata": json.loads(args.metadata) if args.metadata else {},
+            },
+            overwrite=not args.no_overwrite,
+        )
+    _print_json(result)
+
+
+def cmd_graph_query(args):
+    memory = get_memory_manager()
+    _print_json(memory.graph_context(args.query, depth=args.depth, limit=args.limit))
+
+
+def cmd_graph_entity(args):
+    memory = get_memory_manager()
+    _print_json(
+        {
+            "entity_id": memory.add_entity(
+                name=args.name,
+                node_type=args.node_type,
+                aliases=json.loads(args.aliases) if args.aliases else [],
+                attributes=json.loads(args.attributes) if args.attributes else {},
+            )
+        }
+    )
+
+
+def cmd_graph_relation(args):
+    memory = get_memory_manager()
+    _print_json(
+        {
+            "relation_id": memory.link_entities(
+                source=args.source,
+                target=args.target,
+                relation=args.relation,
+                weight=args.weight,
+                metadata=json.loads(args.metadata) if args.metadata else {},
+            )
+        }
+    )
+
+
 def cmd_serve(args):
     serve(host=args.host, port=args.port)
 
@@ -119,6 +217,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser_status = subparsers.add_parser("status", help="Show team status")
     parser_status.add_argument("--team", default="AgentCrew_dev", help="Team id")
     parser_status.set_defaults(func=cmd_team_status)
+
+    parser_matrix = subparsers.add_parser("team:matrix", help="Show team capability matrix")
+    parser_matrix.set_defaults(func=cmd_team_matrix)
 
     parser_task = subparsers.add_parser("task:create", help="Create task")
     parser_task.add_argument("title", help="Task title")
@@ -155,6 +256,60 @@ def build_parser() -> argparse.ArgumentParser:
     parser_inbox.add_argument("agent", help="Agent id")
     parser_inbox.add_argument("--unread", "-u", action="store_true", help="Only unread")
     parser_inbox.set_defaults(func=cmd_check_inbox)
+
+    parser_skill_list = subparsers.add_parser("skill:list", help="List installed skills")
+    parser_skill_list.set_defaults(func=cmd_skill_list)
+
+    parser_skill_install = subparsers.add_parser("skill:install", help="Install a skill manifest")
+    parser_skill_install.add_argument("--file", help="Manifest JSON file")
+    parser_skill_install.add_argument("--name", help="Skill name")
+    parser_skill_install.add_argument("--version", default="0.1.0", help="Skill version")
+    parser_skill_install.add_argument("--description", help="Skill description")
+    parser_skill_install.add_argument("--prompt", help="Skill entry prompt")
+    parser_skill_install.add_argument("--tools", help="JSON array of tool names")
+    parser_skill_install.add_argument("--tags", help="JSON array of tags")
+    parser_skill_install.add_argument("--metadata", help="JSON object metadata")
+    parser_skill_install.add_argument("--no-overwrite", action="store_true", help="Do not overwrite existing skill")
+    parser_skill_install.set_defaults(func=cmd_skill_install)
+
+    parser_mcp_list = subparsers.add_parser("mcp:list", help="List installed MCP servers")
+    parser_mcp_list.set_defaults(func=cmd_mcp_list)
+
+    parser_mcp_install = subparsers.add_parser("mcp:install", help="Install an MCP server manifest")
+    parser_mcp_install.add_argument("--file", help="Manifest JSON file")
+    parser_mcp_install.add_argument("--name", help="Server name")
+    parser_mcp_install.add_argument("--version", default="0.1.0", help="Server version")
+    parser_mcp_install.add_argument("--description", help="Server description")
+    parser_mcp_install.add_argument("--transport", default="stdio", help="Transport type")
+    parser_mcp_install.add_argument("--command", help="Command executable")
+    parser_mcp_install.add_argument("--args", help="JSON array of command args")
+    parser_mcp_install.add_argument("--env", help="JSON object of environment vars")
+    parser_mcp_install.add_argument("--cwd", help="Working directory")
+    parser_mcp_install.add_argument("--capabilities", help="JSON array of capabilities")
+    parser_mcp_install.add_argument("--metadata", help="JSON object metadata")
+    parser_mcp_install.add_argument("--no-overwrite", action="store_true", help="Do not overwrite existing server")
+    parser_mcp_install.set_defaults(func=cmd_mcp_install)
+
+    parser_graph_query = subparsers.add_parser("graph:query", help="Query graph memory")
+    parser_graph_query.add_argument("query", help="Query string")
+    parser_graph_query.add_argument("--depth", type=int, default=1, help="Traversal depth")
+    parser_graph_query.add_argument("--limit", type=int, default=8, help="Node limit")
+    parser_graph_query.set_defaults(func=cmd_graph_query)
+
+    parser_graph_entity = subparsers.add_parser("graph:add-entity", help="Add a graph entity")
+    parser_graph_entity.add_argument("name", help="Entity name")
+    parser_graph_entity.add_argument("--node-type", default="concept", help="Entity type")
+    parser_graph_entity.add_argument("--aliases", help="JSON array of aliases")
+    parser_graph_entity.add_argument("--attributes", help="JSON object of attributes")
+    parser_graph_entity.set_defaults(func=cmd_graph_entity)
+
+    parser_graph_relation = subparsers.add_parser("graph:add-relation", help="Add a graph relation")
+    parser_graph_relation.add_argument("source", help="Source entity or node id")
+    parser_graph_relation.add_argument("target", help="Target entity or node id")
+    parser_graph_relation.add_argument("relation", help="Relation name")
+    parser_graph_relation.add_argument("--weight", type=float, default=1.0, help="Relation weight")
+    parser_graph_relation.add_argument("--metadata", help="JSON object metadata")
+    parser_graph_relation.set_defaults(func=cmd_graph_relation)
 
     parser_serve = subparsers.add_parser("serve", help="Run the standalone HTTP service")
     parser_serve.add_argument("--host", default="127.0.0.1", help="Bind host")

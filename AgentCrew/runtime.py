@@ -47,6 +47,8 @@ class RuntimePaths:
     data_dir: Path
     logs_dir: Path
     call_logs_dir: Path
+    skills_dir: Path
+    mcp_dir: Path
     tmp_dir: Path
     plugin_dir: Path
 
@@ -65,6 +67,8 @@ def get_runtime_paths(workspace: Optional[str | Path] = None) -> RuntimePaths:
     data_dir = _ensure_directory(home / "data")
     logs_dir = _ensure_directory(home / "logs")
     call_logs_dir = _ensure_directory(data_dir / "call_logs")
+    skills_dir = _ensure_directory(home / "skills")
+    mcp_dir = _ensure_directory(home / "mcp")
     tmp_dir = Path(tempfile.gettempdir()) / "agentcrew"
     _ensure_directory(tmp_dir)
     plugin_dir = _ensure_directory(PROJECT_ROOT / "openclaw_plugin")
@@ -79,6 +83,8 @@ def get_runtime_paths(workspace: Optional[str | Path] = None) -> RuntimePaths:
         data_dir=data_dir,
         logs_dir=logs_dir,
         call_logs_dir=call_logs_dir,
+        skills_dir=skills_dir,
+        mcp_dir=mcp_dir,
         tmp_dir=tmp_dir,
         plugin_dir=plugin_dir,
     )

@@ -7,6 +7,7 @@ from .vector_store import VectorStore, get_vector_store
 from .long_term import LongTermMemory
 from .short_term import ShortTermMemory
 from .context import ContextManager
+from .graph import GraphMemory
 
 __all__ = [
     "MemoryManager",
@@ -15,5 +16,6 @@ __all__ = [
     "get_vector_store",
     "LongTermMemory",
     "ShortTermMemory",
-    "ContextManager"
+    "ContextManager",
+    "GraphMemory",
 ]

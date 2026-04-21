@@ -47,6 +47,8 @@
 | 📊 **Status Tracking** | Deep integration with Kanban system, real-time task status monitoring |
 | 💬 **Message Communication** | Inter-agent message passing, event notifications, pub/sub pattern |
 | 🎯 **Workflow Orchestration** | Flexible workflow definition, support for conditional branches and loops |
+| 🧠 **Hybrid Memory** | Short-term conversation memory, long-term semantic memory, and graph memory |
+| 🧩 **Skill/MCP Registry** | Install reusable skills and MCP server manifests into the runtime home |
 | 🔀 **Task Dependency Graph** | DAG task dependency management, topological sorting, cycle detection |
 | 🔗 **Connection Pool** | HTTP/Database/WebSocket connection pool, auto-maintenance, health checks |
 | 💿 **State Persistence** | JSON/SQLite/In-memory backends, auto-save, state recovery |
@@ -146,6 +148,50 @@ The standalone service exposes:
 - `POST /tasks`
 - `POST /tasks/{id}/execute`
 - `GET /messages?agent=<agent_id>`
+- `GET /teams/capabilities`
+- `GET /memory/graph?query=<term>`
+- `GET /skills`
+- `POST /skills/install`
+- `GET /mcp/servers`
+- `POST /mcp/install`
+
+### 🌐 General Agent Framework
+
+AgentCrew is no longer limited to software delivery roles. Agents now carry:
+
+- capability profiles
+- domain tags
+- attached skills
+- attached MCP servers
+
+Use the capability matrix to inspect a team:
+
+```bash
+python -m AgentCrew team:matrix
+```
+
+### 🧠 Graph Memory
+
+In addition to short-term and long-term semantic memory, AgentCrew now provides graph memory for entity and relation tracking.
+
+```bash
+python -m AgentCrew graph:add-entity AgentCrew --node-type project
+python -m AgentCrew graph:add-relation AgentCrew OpenClaw integrates_with
+python -m AgentCrew graph:query AgentCrew
+```
+
+Graph memory is injected into prompt context together with recent conversation and semantic recall.
+
+### 🧩 Skill And MCP Installation
+
+Install runtime skills and MCP server manifests directly into AgentCrew:
+
+```bash
+python -m AgentCrew skill:install --name planner --prompt "You are a planning skill."
+python -m AgentCrew mcp:install --name docs --command python --args '["-m","docs_server"]'
+python -m AgentCrew skill:list
+python -m AgentCrew mcp:list
+```
 
 ### 🔌 OpenClaw Plugin
 
